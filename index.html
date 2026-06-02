@@ -15,7 +15,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <!-- Google Identity -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
 /* ── Reset & tokens ─────────────────────────────────────── */
@@ -220,10 +219,25 @@ textarea{min-height:76px;line-height:1.6}
 // ─────────────────────────────────────────────────────────────
 // CONFIGURACIÓN — Reemplaza con tu Client ID de Google Cloud
 // ─────────────────────────────────────────────────────────────
-const GOOGLE_CLIENT_ID = '833147808780-uijlecklphgdca5ebdjih0lvrgeenc0i.apps.googleusercontent.com';
-const DRIVE_FOLDER_NAME = 'Formulador MML – Jóvenes en Ciencia';
-const APP_FILE_NAME = 'formuladorMML_datos.json';
-const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
+// ── Supabase config — replace with your values ──────────────────
+const SUPABASE_URL  = 'https://msrhvjukzsgnroqfnevu.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zcmh2anVrenNnbnJvcWZuZXZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA0MzI3NTYsImV4cCI6MjA5NjAwODc1Nn0.H2j5NkTYG-PvZO-X7KwLvI1UsMlPYqOr1zYmRJYT1Zo';
+const ADMIN_PASS    = 'sena2026admin'; // change this
+
+// ── Supabase helpers ─────────────────────────────────────────────
+async function sbFetch(path, opts={}) {
+  const url = SUPABASE_URL + '/rest/v1/' + path;
+  const headers = {
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': opts.prefer || 'return=representation',
+    ...(opts.headers||{})
+  };
+  const res = await fetch(url, { method: opts.method||'GET', headers, body: opts.body });
+  if (!res.ok) { const t = await res.text(); throw new Error(t); }
+  return opts.method === 'DELETE' ? null : res.json();
+}
 
 // ─────────────────────────────────────────────────────────────
 // DATOS CONSTANTES
@@ -261,8 +275,7 @@ const TIPOS_MINCI = ['Prototipo','Software','Manual técnico','Artículo cientí
 let state = {
   loggedIn: false,
   user: null,
-  accessToken: null,
-  driveFileId: null,
+  supabaseId: null,
   saveStatus: 'idle', // idle | saving | saved
   session: 1,
   completed: [],
@@ -303,122 +316,114 @@ let state = {
 };
 
 // ─────────────────────────────────────────────────────────────
-// GOOGLE AUTH & DRIVE
+// AUTH — simple name/email, no OAuth
 // ─────────────────────────────────────────────────────────────
-let tokenClient;
-
-function initGoogle() {
-  if (!window.google || GOOGLE_CLIENT_ID.includes('TU_CLIENT_ID')) return;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: SCOPES,
-    callback: handleTokenResponse,
-  });
-}
-
-function handleTokenResponse(resp) {
-  if (resp.error) {
-    if (resp.error === 'access_denied') showToast('Acceso denegado. Intenta de nuevo.', 'error');
-    else showToast('Error de autorización: ' + resp.error, 'error');
-    return;
-  }
-  state.accessToken = resp.access_token;
-  // Token expires in ~1 hour — schedule silent refresh at 50 min
-  clearTimeout(state._tokenTimer);
-  state._tokenTimer = setTimeout(() => {
-    if (state.loggedIn && tokenClient) {
-      tokenClient.requestAccessToken({ prompt: '' }); // silent refresh
-    }
-  }, 50 * 60 * 1000);
-  fetchUserInfo();
-}
-
-async function fetchUserInfo() {
-  try {
-    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: 'Bearer ' + state.accessToken }
-    });
-    const u = await r.json();
-    state.user = { name: u.name || u.email, email: u.email, picture: u.picture || '' };
-    state.loggedIn = true;
-    await loadFromDrive();
-    render();
-  } catch(e) { showToast('Error al obtener perfil de usuario', 'error'); }
-}
+function initGoogle() {} // kept for compatibility
 
 function signIn() {
-  if (!tokenClient) {
-    showToast('Configura el Client ID de Google Cloud primero (ver instrucciones en el README)', 'error');
-    // For demo: allow offline use
-    state.loggedIn = true;
-    state.user = { name: 'Usuario de demostración', email: 'demo@local', picture: '' };
-    loadFromLocalStorage();
-    render();
-    return;
-  }
-  tokenClient.requestAccessToken();
+  // handled by login form submit
 }
 
 function signOut() {
-  if (state.accessToken) google.accounts.oauth2.revoke(state.accessToken);
-  state.loggedIn = false; state.user = null; state.accessToken = null;
-  state.driveFileId = null;
+  localStorage.removeItem('formuladorMML_user');
+  state.loggedIn = false;
+  state.user = null;
+  state.supabaseId = null;
   render();
 }
 
-// ── Drive: load ──────────────────────────────────────────────
-async function loadFromDrive() {
-  if (!state.accessToken) return;
-  try {
-    // search in appDataFolder
-    const search = await fetch(
-      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${APP_FILE_NAME}'&fields=files(id,name)`,
-      { headers: { Authorization: 'Bearer ' + state.accessToken } }
-    );
-    const res = await search.json();
-    if (res.files && res.files.length > 0) {
-      state.driveFileId = res.files[0].id;
-      const fileRes = await fetch(
-        `https://www.googleapis.com/drive/v3/files/${state.driveFileId}?alt=media`,
-        { headers: { Authorization: 'Bearer ' + state.accessToken } }
-      );
-      const saved = await fileRes.json();
-      // Merge saved data with defaults
-      state.data = Object.assign({}, state.data, saved.data || {});
-      state.completed = saved.completed || [];
-      state.session = saved.session || 1;
-      showToast('Datos cargados desde Google Drive ✓', 'green');
-    }
-  } catch(e) {
-    console.warn('Drive load error:', e);
-    loadFromLocalStorage();
+function loginWithName(name, email) {
+  if (!name || name.trim().length < 3) {
+    showToast('Escribe tu nombre completo (mínimo 3 caracteres)', 'error');
+    return;
   }
+  state.user = { name: name.trim(), email: (email||'').trim() };
+  state.loggedIn = true;
+  localStorage.setItem('formuladorMML_user', JSON.stringify(state.user));
+  loadFromSupabase();
 }
 
-// ── Drive: save ──────────────────────────────────────────────
+// ── Supabase: load ───────────────────────────────────────────
+async function loadFromSupabase() {
+  if (!state.user || SUPABASE_URL.includes('TU_SUPABASE')) {
+    loadFromLocalStorage();
+    render();
+    return;
+  }
+  try {
+    const rows = await sbFetch(
+      `proyectos?formulador_nombre=eq.${encodeURIComponent(state.user.name)}&order=updated_at.desc&limit=1`
+    );
+    if (rows && rows.length > 0) {
+      const row = rows[0];
+      state.supabaseId = row.id;
+      const saved = typeof row.formulario === 'string' ? JSON.parse(row.formulario) : row.formulario;
+      state.data     = Object.assign({}, state.data, saved.data || {});
+      state.completed = saved.completed || [];
+      state.session   = saved.session || 1;
+      showToast('Datos cargados ✓', 'green');
+    } else {
+      loadFromLocalStorage();
+    }
+  } catch(e) {
+    console.warn('Supabase load error:', e);
+    loadFromLocalStorage();
+  }
+  render();
+}
+
+// ── Save: localStorage + Supabase ────────────────────────────
 let saveTimer = null;
 function scheduleSave() {
   state.saveStatus = 'saving';
   updateSaveStatus();
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(doSave, 1800);
+  saveTimer = setTimeout(doSave, 2000);
 }
 
 async function doSave() {
-  const payload = JSON.stringify({ data: state.data, completed: state.completed, session: state.session, savedAt: new Date().toISOString() });
-  // always save locally first — zero latency, zero failure
+  const payload = JSON.stringify({
+    data: state.data, completed: state.completed,
+    session: state.session, savedAt: new Date().toISOString()
+  });
+  // Layer 1: localStorage (instant, always)
   saveToLocalStorage(payload);
-  // then try Drive if authenticated
-  if (state.accessToken && state.loggedIn) {
+  // Layer 2: Supabase (async, background)
+  if (state.loggedIn && state.user && !SUPABASE_URL.includes('TU_SUPABASE')) {
     try {
-      await saveToDrive(payload);
+      await saveToSupabase(payload);
     } catch(e) {
-      console.warn('Drive save skipped:', e.message);
-      // localStorage already saved above — no data loss
+      console.warn('Supabase save skipped:', e.message);
     }
   }
   state.saveStatus = 'saved';
   updateSaveStatus();
+}
+
+async function saveToSupabase(payload) {
+  const record = {
+    formulador_nombre: state.user.name,
+    formulador_email:  state.user.email || '',
+    titulo_proyecto:   state.data.titulo || 'Sin título',
+    sesion_actual:     state.session,
+    sesiones_completas: state.completed.length,
+    porcentaje:        Math.round((state.completed.length/10)*100),
+    municipios:        (state.data.municipios||[]).join(', '),
+    formulario:        payload,
+    updated_at:        new Date().toISOString()
+  };
+  if (state.supabaseId) {
+    // update existing row
+    await sbFetch(`proyectos?id=eq.${state.supabaseId}`, {
+      method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(record)
+    });
+  } else {
+    // insert new row
+    const rows = await sbFetch('proyectos', {
+      method: 'POST', body: JSON.stringify(record)
+    });
+    if (rows && rows[0]) state.supabaseId = rows[0].id;
+  }
 }
 
 // ── Export JSON backup ──────────────────────────────────────
@@ -471,24 +476,8 @@ function importJSON() {
   input.click();
 }
 
-async function saveToDrive(payload) {
-  try {
-    const metadata = { name: APP_FILE_NAME, parents: state.driveFileId ? undefined : ['appDataFolder'] };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', new Blob([payload], { type: 'application/json' }));
-    const method = state.driveFileId ? 'PATCH' : 'POST';
-    const url = state.driveFileId
-      ? `https://www.googleapis.com/upload/drive/v3/files/${state.driveFileId}?uploadType=multipart`
-      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
-    const r = await fetch(url, { method, headers: { Authorization: 'Bearer ' + state.accessToken }, body: form });
-    const res = await r.json();
-    if (res.id) state.driveFileId = res.id;
-  } catch(e) {
-    saveToLocalStorage(payload);
-    console.warn('Drive save failed, using localStorage:', e);
-  }
-}
+// saveToDrive removed — using Supabase
+
 
 function saveToLocalStorage(payload) {
   try {
@@ -772,45 +761,88 @@ function render() {
 
 // ── Login ────────────────────────────────────────────────────
 function renderLogin() {
+  const isAdmin = window.location.search.includes('admin');
+  if (isAdmin) return renderAdminLogin();
   return `
   <div class="login-screen">
     <div class="login-card">
       <div class="login-icon">🌿</div>
       <h1>Formulador MML</h1>
-      <p class="subtitle">Plantilla interactiva de formulación de proyectos con Metodología de Marco Lógico</p>
+      <p class="subtitle">Formulación de proyectos con Metodología de Marco Lógico</p>
       <div class="convoc">Jóvenes en Ciencia para la Paz – Capítulo Ipiales</div>
       <div class="login-features">
         <div class="login-feat"><div class="feat-dot"></div>10 sesiones de formulación guiadas</div>
-        <div class="login-feat"><div class="feat-dot"></div>Guardado automático en Google Drive</div>
+        <div class="login-feat"><div class="feat-dot"></div>Guardado automático en la nube</div>
         <div class="login-feat"><div class="feat-dot"></div>Exportación a PDF lista para entregar</div>
         <div class="login-feat"><div class="feat-dot"></div>Árbol de problemas, MML y presupuesto</div>
       </div>
-      <button class="google-btn" onclick="signIn()">
-        <svg class="google-logo" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-        Continuar con Google
+      <div style="text-align:left;margin-bottom:16px">
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:5px;color:var(--ink)">Tu nombre completo</label>
+        <input type="text" id="login-name" placeholder="Ej: Carlos Andres Rosero Zambrano"
+          style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--font-body);margin-bottom:10px"
+          onkeydown="if(event.key==='Enter')doLogin()">
+        <label style="font-size:13px;font-weight:500;display:block;margin-bottom:5px;color:var(--ink)">Correo electrónico <span style="color:var(--ink-soft);font-weight:400">(opcional, para recuperar tu avance)</span></label>
+        <input type="email" id="login-email" placeholder="tucorreo@gmail.com"
+          style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--font-body)"
+          onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="google-btn" onclick="doLogin()" style="background:var(--green);color:#fff;border-color:var(--green);justify-content:center">
+        Comenzar a formular →
       </button>
-      <p class="login-note">Tus datos se guardan de forma privada en tu propio Google Drive.<br>Puedes retomar desde cualquier dispositivo.</p>
+      <p class="login-note" style="margin-top:12px">Tus datos se guardan automáticamente.<br>Usa el mismo nombre para retomar desde otro dispositivo.</p>
     </div>
   </div>`;
 }
 
+function doLogin() {
+  const name  = (document.getElementById('login-name')||{}).value || '';
+  const email = (document.getElementById('login-email')||{}).value || '';
+  loginWithName(name, email);
+}
+
+function renderAdminLogin() {
+  return `
+  <div class="login-screen">
+    <div class="login-card">
+      <div class="login-icon">🔐</div>
+      <h1>Panel Admin</h1>
+      <p class="subtitle">Seguimiento de proyectos en tiempo real</p>
+      <div style="margin-bottom:16px">
+        <input type="password" id="admin-pass" placeholder="Contraseña de administrador"
+          style="width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:var(--font-body)"
+          onkeydown="if(event.key==='Enter')doAdminLogin()">
+      </div>
+      <button class="google-btn" onclick="doAdminLogin()" style="background:var(--green);color:#fff;border-color:var(--green);justify-content:center">
+        Entrar al panel →
+      </button>
+    </div>
+  </div>`;
+}
+
+function doAdminLogin() {
+  const pass = (document.getElementById('admin-pass')||{}).value || '';
+  if (pass === ADMIN_PASS) {
+    state.isAdmin = true;
+    state.loggedIn = true;
+    state.user = { name: 'Administrador', email: 'admin' };
+    loadAdminPanel();
+  } else {
+    showToast('Contraseña incorrecta', 'error');
+  }
+}
+
 // ── App shell ────────────────────────────────────────────────
 function renderApp() {
+  if (state.isAdmin) return `<div id='app'><div class='topbar'><div class='topbar-brand'>Formulador <span>MML</span> — Panel Admin</div></div>${renderAdmin()}</div>`;
   const p = progress();
   const user = state.user || {};
-  const isDemoUser = !state.accessToken;
   // show unsaved warning if localStorage hasn't been updated in > 5 min
-  const lastSavedRaw = localStorage.getItem('formuladorMML_lastSaved');
-  const minutesSinceSave = lastSavedRaw ? Math.round((Date.now() - parseInt(lastSavedRaw)) / 60000) : null;
   return `
   <div id="app">
     <div class="topbar">
       <div class="topbar-brand">Formulador <span>MML</span></div>
       <div class="topbar-right">
-        ${isDemoUser ? `<span style="font-size:11px;color:#fde68a;background:rgba(255,255,255,0.12);padding:3px 10px;border-radius:12px;cursor:pointer" onclick="signIn()" title="Conectar Drive para respaldo automático">
-          ⚠ Sin Drive — datos solo en este navegador. Clic para conectar
-        </span>` :
-          `<div class="save-status"><div class="save-dot saved" id="save-dot"></div><span id="save-status-text">Guardado en Drive</span></div>`}
+  `<div class="save-status"><div class="save-dot saved" id="save-dot"></div><span id="save-status-text">Guardado</span></div>`
         <div class="user-pill">
           ${user.picture ? `<img src="${user.picture}" class="user-avatar" referrerpolicy="no-referrer">` :
             `<div class="user-initials">${(user.name||'U').charAt(0).toUpperCase()}</div>`}
@@ -1973,13 +2005,194 @@ function showPDFPreview() {
   </div>`;
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// ADMIN PANEL
+// ─────────────────────────────────────────────────────────────
+async function loadAdminPanel() {
+  render(); // show shell first
+  try {
+    const rows = await sbFetch('proyectos?order=updated_at.desc&limit=100');
+    state.adminRows = rows || [];
+  } catch(e) {
+    state.adminRows = [];
+    showToast('Error cargando datos: ' + e.message, 'error');
+  }
+  render();
+}
+
+function renderAdmin() {
+  const rows = state.adminRows || [];
+  const total = rows.length;
+  const completos = rows.filter(r=>r.porcentaje===100).length;
+  const enProgreso = rows.filter(r=>r.porcentaje>0&&r.porcentaje<100).length;
+  const sinIniciar = rows.filter(r=>r.porcentaje===0).length;
+
+  return `
+  <div style="padding:24px;max-width:1100px;margin:0 auto">
+    <!-- summary cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px">
+      ${[
+        {label:'Total proyectos', val:total, color:'var(--green)'},
+        {label:'Completos (100%)', val:completos, color:'#16a34a'},
+        {label:'En progreso', val:enProgreso, color:'#d97706'},
+        {label:'Sin iniciar', val:sinIniciar, color:'#6b7280'},
+      ].map(s=>`
+        <div style="background:#fff;border:1px solid var(--border-light);border-radius:12px;padding:16px;text-align:center">
+          <div style="font-size:28px;font-weight:700;color:${s.color}">${s.val}</div>
+          <div style="font-size:12px;color:var(--ink-soft);margin-top:2px">${s.label}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- search -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center">
+      <input type="text" id="admin-search" placeholder="Buscar por nombre o proyecto…"
+        style="flex:1;padding:9px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:var(--font-body)"
+        oninput="filterAdmin(this.value)">
+      <button class="btn btn-sm" onclick="loadAdminPanel()">↻ Actualizar</button>
+      <button class="btn btn-sm" onclick="exportAdminCSV()">Exportar CSV</button>
+      <button class="btn btn-sm" onclick="signOut()">Salir</button>
+    </div>
+
+    <!-- table -->
+    <div style="background:#fff;border:1px solid var(--border-light);border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--green);color:#fff">
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em">Formulador</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.05em">Proyecto</th>
+            <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase">Sesión</th>
+            <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase">Avance</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase">Municipios</th>
+            <th style="padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase">Última actividad</th>
+            <th style="padding:10px 14px;text-align:center;font-size:11px;text-transform:uppercase">Ver</th>
+          </tr>
+        </thead>
+        <tbody id="admin-tbody">
+          ${renderAdminRows(rows)}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function renderAdminRows(rows) {
+  if (!rows.length) return `<tr><td colspan="7" style="padding:32px;text-align:center;color:var(--ink-soft)">No hay proyectos registrados aún</td></tr>`;
+  return rows.map((r,i) => {
+    const pct = r.porcentaje || 0;
+    const barColor = pct===100?'#16a34a':pct>=50?'#d97706':'#6b7280';
+    const fecha = r.updated_at ? new Date(r.updated_at).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
+    return `
+    <tr style="border-top:1px solid var(--border-light);${i%2===1?'background:#fafafa':''}">
+      <td style="padding:10px 14px;font-weight:500">${r.formulador_nombre||'—'}<br><span style="font-size:11px;color:var(--ink-soft);font-weight:400">${r.formulador_email||''}</span></td>
+      <td style="padding:10px 14px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.titulo_proyecto||'Sin título'}</td>
+      <td style="padding:10px 14px;text-align:center"><span style="background:var(--green-light);color:var(--green);font-size:11px;font-weight:600;padding:3px 10px;border-radius:12px">S${r.sesion_actual||1}</span></td>
+      <td style="padding:10px 14px;text-align:center;min-width:100px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:${barColor};min-width:32px">${pct}%</span>
+        </div>
+      </td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--ink-soft)">${r.municipios||'—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--ink-soft)">${fecha}</td>
+      <td style="padding:10px 14px;text-align:center">
+        <button class="btn btn-sm" onclick="viewProject(${i})" style="font-size:11px">Ver</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterAdmin(q) {
+  const rows = (state.adminRows||[]).filter(r=>
+    (r.formulador_nombre||'').toLowerCase().includes(q.toLowerCase()) ||
+    (r.titulo_proyecto||'').toLowerCase().includes(q.toLowerCase())
+  );
+  const tbody = document.getElementById('admin-tbody');
+  if (tbody) tbody.innerHTML = renderAdminRows(rows);
+}
+
+function viewProject(idx) {
+  const row = (state.adminRows||[])[idx];
+  if (!row) return;
+  try {
+    const saved = typeof row.formulario==='string' ? JSON.parse(row.formulario) : row.formulario;
+    // Load their data into a read-only preview
+    const prev = Object.assign({}, state.data, saved.data||{});
+    state._previewData = prev;
+    state._previewName = row.formulador_nombre;
+    state._previewCompleted = saved.completed||[];
+    showAdminPreview();
+  } catch(e) { showToast('Error abriendo proyecto', 'error'); }
+}
+
+function showAdminPreview() {
+  const d = state._previewData;
+  const linLabel = (LINEAS.find(l=>l.id===d.linea)||{}).label||'—';
+  const content = document.querySelector('.content');
+  if (!content) return;
+  content.innerHTML = `
+  <div style="max-width:860px;margin:0 auto;padding:24px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:4px">Proyecto de: <strong>${state._previewName}</strong></div>
+        <h2 style="font-family:var(--font-display);color:var(--green);font-size:20px">${d.titulo||'Sin título'}</h2>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="loadAdminPanel();render()">← Volver al panel</button>
+      </div>
+    </div>
+    <div style="background:#fff;padding:28px;border-radius:12px;border:1px solid var(--border-light)">
+      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
+        <tr><td style="padding:6px 0;font-weight:600;width:35%;color:var(--ink-soft)">Formuladores</td><td>${[d.formulador1,d.formulador2,d.formulador3].filter(Boolean).join(', ')||'—'}</td></tr>
+        <tr><td style="padding:6px 0;font-weight:600;color:var(--ink-soft)">Línea</td><td>${linLabel}</td></tr>
+        <tr><td style="padding:6px 0;font-weight:600;color:var(--ink-soft)">Municipios</td><td>${(d.municipios||[]).join(', ')||'—'}</td></tr>
+        <tr><td style="padding:6px 0;font-weight:600;color:var(--ink-soft)">Duración</td><td>${d.duracion||'—'} meses</td></tr>
+        <tr><td style="padding:6px 0;font-weight:600;color:var(--ink-soft)">Sesiones completas</td><td>${state._previewCompleted.length} de 10</td></tr>
+      </table>
+      ${d.problema?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px">Problema central</div><div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px">${d.problema}</div></div>`:''}
+      ${d.obj_especifico?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--ink-soft);margin-bottom:4px">Objetivo específico</div><div style="background:var(--bg);padding:10px 12px;border-radius:8px;font-size:13px">${d.obj_especifico}</div></div>`:''}
+      ${d.resultados&&d.resultados.filter(r=>r).length?`<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px">Resultados esperados</div>${d.resultados.filter(r=>r).map((r,i)=>`<div style="display:flex;gap:8px;margin-bottom:4px"><span style="background:var(--green-light);color:var(--green);font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;flex-shrink:0">R${i+1}</span><span style="font-size:13px">${r}</span></div>`).join('')}</div>`:''}
+    </div>
+  </div>`;
+}
+
+function exportAdminCSV() {
+  const rows = state.adminRows || [];
+  const header = ['Formulador','Email','Proyecto','Sesión','Avance%','Municipios','Última actividad'];
+  const lines = rows.map(r=>[
+    r.formulador_nombre||'',r.formulador_email||'',r.titulo_proyecto||'',
+    r.sesion_actual||1,r.porcentaje||0,r.municipios||'',r.updated_at||''
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv = [header.join(','),...lines].join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='formuladorMML_seguimiento.csv'; a.click();
+  showToast('CSV exportado ✓','green');
+}
+
 // ─────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  loadFromLocalStorage();
+  // Check if admin mode
+  if (window.location.search.includes('admin')) {
+    render(); return;
+  }
+  // Check saved user session
+  try {
+    const savedUser = localStorage.getItem('formuladorMML_user');
+    if (savedUser) {
+      state.user = JSON.parse(savedUser);
+      state.loggedIn = true;
+      loadFromLocalStorage();
+      loadFromSupabase(); // sync from cloud in background
+      render();
+      return;
+    }
+  } catch(e) {}
   render();
-  setTimeout(initGoogle, 500);
 });
 </script>
 </body>
