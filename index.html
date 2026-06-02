@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Formulador MML · Jóvenes en Ciencia para la Paz</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- Google Identity -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<style>
+/* ── Reset & tokens ─────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#1a5c38;--green-mid:#2d7a4f;--green-light:#e8f5ee;--green-pale:#f4faf7;
+  --gold:#c49a2a;--gold-light:#fdf6e3;
+  --ink:#1a1a18;--ink-mid:#4a4a45;--ink-soft:#8a8a82;
+  --border:#d8d8d0;--border-light:#eeeeea;
+  --bg:#fafaf8;--white:#ffffff;
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 12px rgba(0,0,0,0.04);
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+}
+body{font-family:var(--font-body);font-size:14px;color:var(--ink);background:var(--bg);min-height:100vh}
+h1,h2,h3{font-family:var(--font-display)}
+a{color:var(--green-mid);text-decoration:none}
+
+/* ── Layout ─────────────────────────────────────────────── */
+#app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--green);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-brand{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:-0.01em}
+.topbar-brand span{color:#a8d5b8;font-style:italic;font-weight:400}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.user-pill{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.15);border-radius:24px;padding:4px 12px 4px 4px;font-size:13px}
+.user-avatar{width:28px;height:28px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);object-fit:cover}
+.user-initials{width:28px;height:28px;border-radius:50%;background:#a8d5b8;color:var(--green);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.save-status{font-size:11px;color:#a8d5b8;display:flex;align-items:center;gap:4px}
+.save-dot{width:6px;height:6px;border-radius:50%;background:#a8d5b8}
+.save-dot.saving{background:#f0c040;animation:pulse 1s infinite}
+.save-dot.saved{background:#6fcf97}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.main-layout{display:flex;flex:1;height:calc(100vh - 56px);overflow:hidden}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar{width:220px;background:var(--white);border-right:1px solid var(--border-light);overflow-y:auto;flex-shrink:0;padding:16px 0}
+.sidebar-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-soft);padding:0 16px;margin-bottom:8px}
+.sess-item{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;transition:background 0.15s;border-left:3px solid transparent}
+.sess-item:hover{background:var(--green-pale)}
+.sess-item.active{background:var(--green-light);border-left-color:var(--green)}
+.sess-item.done .sess-num{background:var(--green);color:#fff}
+.sess-num{width:24px;height:24px;border-radius:50%;background:var(--border-light);color:var(--ink-soft);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s}
+.sess-item.active .sess-num{background:var(--green);color:#fff}
+.sess-label{font-size:12px;color:var(--ink-mid);line-height:1.3}
+.sess-item.active .sess-label{color:var(--ink);font-weight:500}
+.sidebar-divider{height:1px;background:var(--border-light);margin:12px 16px}
+.sidebar-action{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;font-size:12px;color:var(--ink-mid);border-radius:0;transition:background 0.15s}
+.sidebar-action:hover{background:var(--green-pale);color:var(--green)}
+.sidebar-action svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.progress-ring{margin:12px 16px;background:var(--border-light);border-radius:6px;height:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:6px;transition:width 0.4s}
+
+/* ── Content area ──────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;padding:24px}
+.content-inner{max-width:860px;margin:0 auto}
+.section-header{margin-bottom:20px}
+.section-header h2{font-size:22px;color:var(--green);line-height:1.2}
+.section-header p{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.badge-row{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-sesion{background:var(--green-light);color:var(--green)}
+.badge-seccion{background:var(--gold-light);color:var(--gold);border:1px solid #e8d090}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.card{background:var(--white);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-bottom:14px}
+
+/* ── Form elements ───────────────────────────────────────── */
+.field{margin-bottom:14px}
+label.lbl{font-size:13px;font-weight:500;color:var(--ink);display:block;margin-bottom:5px}
+label.lbl span{font-size:11px;color:var(--ink-soft);font-weight:400;margin-left:4px}
+input[type=text],input[type=number],textarea,select{
+  width:100%;font-family:var(--font-body);font-size:13px;
+  background:var(--bg);color:var(--ink);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:8px 12px;transition:border-color 0.15s;resize:vertical
+}
+input[type=text]:focus,input[type=number]:focus,textarea:focus,select:focus{outline:none;border-color:var(--green-mid);background:var(--white)}
+textarea{min-height:76px;line-height:1.6}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.row4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+
+/* ── Note boxes ──────────────────────────────────────────── */
+.note{background:var(--green-pale);border-left:3px solid var(--green-mid);border-radius:0 var(--radius) var(--radius) 0;padding:9px 13px;font-size:12px;color:var(--ink-mid);margin-bottom:12px;line-height:1.6}
+.note.warn{background:#fffbeb;border-left-color:var(--gold)}
+.note.danger{background:#fef2f2;border-left-color:#dc2626}
+.note.success{background:var(--green-light);border-left-color:var(--green);font-weight:500}
+
+/* ── Chips / multiselect ─────────────────────────────────── */
+.chip-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{padding:5px 13px;border-radius:20px;border:1px solid var(--border);font-size:12px;cursor:pointer;background:var(--white);color:var(--ink-mid);transition:all 0.12s;font-family:var(--font-body)}
+.chip:hover{border-color:var(--green-mid);color:var(--green)}
+.chip.sel{background:var(--green-light);color:var(--green);border-color:var(--green-mid);font-weight:500}
+.muni-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:4px;margin-top:6px}
+.muni-chip{padding:4px 8px;border-radius:6px;border:1px solid var(--border);font-size:11px;cursor:pointer;background:var(--white);color:var(--ink-mid);text-align:center;transition:all 0.1s}
+.muni-chip:hover{border-color:var(--green-mid);color:var(--green)}
+.muni-chip.sel{background:var(--green-light);color:var(--green);border-color:var(--green-mid)}
+
+/* ── Tree tables ─────────────────────────────────────────── */
+.tree-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:4px}
+.tree-table th{padding:8px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;border:1px solid var(--border)}
+.tree-table td{padding:6px 10px;border:1px solid var(--border);vertical-align:top}
+.tree-table input{background:transparent;border:none;font-family:var(--font-body);font-size:13px;color:var(--ink);width:100%;padding:0}
+.tree-table input:focus{outline:none}
+.th-effect{background:#dbeafe;color:#1e3a5f}
+.th-effect2{background:#bfdbfe;color:#1e3a5f}
+.td-effect{background:#eff6ff}
+.th-central{background:var(--green);color:#fff}
+.td-central{background:var(--green-pale);font-weight:500}
+.th-cause{background:#fef3c7;color:#78350f}
+.th-cause2{background:#fde68a;color:#78350f}
+.td-cause{background:#fffbeb}
+
+/* ── MML matrix ──────────────────────────────────────────── */
+.mml-wrap{overflow-x:auto}
+.mml-table{width:100%;border-collapse:collapse;font-size:12px;min-width:700px}
+.mml-table th{background:var(--green);color:#fff;padding:10px 10px;font-size:11px;font-weight:600;text-align:left;border:1px solid rgba(255,255,255,0.2)}
+.mml-table td{padding:8px 10px;border:1px solid var(--border);vertical-align:top;line-height:1.6}
+.mml-table .nivel-lbl{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin-bottom:3px}
+.mml-table .row-fin{background:#f0fdf4}
+.mml-table .row-proposito{background:#f0f9ff}
+.mml-table .row-resultado{background:var(--white)}
+.mml-table .row-actividades{background:var(--bg)}
+.mml-table .row-pre{background:#fffbeb}
+.mml-table input,.mml-table textarea{background:transparent;border:none;font-family:var(--font-body);font-size:12px;color:var(--ink);width:100%;resize:vertical;min-height:36px;padding:0}
+.mml-table input:focus,.mml-table textarea:focus{outline:none}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{padding:9px 18px;border-radius:var(--radius);border:1px solid var(--border);background:var(--white);color:var(--ink);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-body);transition:all 0.15s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg);border-color:var(--ink-soft)}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.btn-primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-primary:hover{background:var(--green-mid)}
+.btn-gold{background:var(--gold);color:#fff;border-color:var(--gold)}
+.btn-gold:hover{background:#b8891f}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:8px}
+.btn-icon{padding:7px;border-radius:8px}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* ── Footer bar ──────────────────────────────────────────── */
+.footer-bar{background:var(--white);border-top:1px solid var(--border-light);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.footer-progress{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink-soft)}
+.progress-steps{display:flex;gap:3px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:all 0.2s}
+.step-dot.done{background:var(--green)}
+.step-dot.active{background:var(--green);box-shadow:0 0 0 3px var(--green-light)}
+
+/* ── Login screen ───────────────────────────────────────── */
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--green);padding:24px}
+.login-card{background:var(--white);border-radius:24px;padding:48px 40px;max-width:420px;width:100%;text-align:center;box-shadow:0 24px 48px rgba(0,0,0,0.15)}
+.login-icon{width:64px;height:64px;background:var(--green-light);border-radius:20px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:32px}
+.login-card h1{font-size:24px;color:var(--green);margin-bottom:6px;line-height:1.2}
+.login-card .subtitle{font-size:14px;color:var(--ink-soft);margin-bottom:8px;line-height:1.6}
+.login-card .convoc{font-size:12px;color:var(--gold);font-weight:600;background:var(--gold-light);padding:4px 12px;border-radius:20px;display:inline-block;margin-bottom:24px}
+.login-features{text-align:left;margin-bottom:28px;display:flex;flex-direction:column;gap:8px}
+.login-feat{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink-mid)}
+.feat-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0}
+.google-btn{width:100%;padding:12px 20px;border-radius:12px;border:1.5px solid var(--border);background:var(--white);font-family:var(--font-body);font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;color:var(--ink)}
+.google-btn:hover{background:var(--bg);border-color:var(--ink-soft);box-shadow:var(--shadow)}
+.google-logo{width:20px;height:20px}
+.login-note{font-size:11px;color:var(--ink-soft);margin-top:14px;line-height:1.6}
+
+/* ── Misc ────────────────────────────────────────────────── */
+.divider{height:1px;background:var(--border-light);margin:16px 0}
+.indicator-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.comp-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.comp-num{width:28px;height:28px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tag-list{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tag{background:var(--green-light);color:var(--green);font-size:11px;padding:2px 9px;border-radius:12px}
+.checkbox-row{display:flex;align-items:flex-start;gap:8px;padding:8px 0}
+.checkbox-row input[type=checkbox]{margin-top:2px;accent-color:var(--green);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+.complete-btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:16px;border-top:1px solid var(--border-light)}
+.pdf-preview-section{font-size:13px;line-height:1.8}
+.pdf-preview-section h3{font-family:var(--font-display);font-size:16px;color:var(--green);margin:16px 0 6px;border-bottom:1px solid var(--border-light);padding-bottom:4px}
+.pdf-table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0}
+.pdf-table th{background:var(--green);color:#fff;padding:6px 10px;font-size:11px;text-align:left;border:1px solid rgba(255,255,255,0.2)}
+.pdf-table td{padding:6px 10px;border:1px solid var(--border);vertical-align:top}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;opacity:0;transform:translateY(8px);transition:all 0.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.green{background:var(--green)}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .row2,.row3,.row4{grid-template-columns:1fr}
+  .indicator-row{grid-template-columns:1fr 1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// CONFIGURACIÓN — Reemplaza con tu Client ID de Google Cloud
+// ─────────────────────────────────────────────────────────────
+const GOOGLE_CLIENT_ID = '833147808780-uijlecklphgdca5ebdjih0lvrgeenc0i.apps.googleusercontent.com';
+const DRIVE_FOLDER_NAME = 'Formulador MML – Jóvenes en Ciencia';
+const APP_FILE_NAME = 'formuladorMML_datos.json';
+const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
+
+// ─────────────────────────────────────────────────────────────
+// DATOS CONSTANTES
+// ─────────────────────────────────────────────────────────────
+const SESIONES = [
+  {id:1, title:'Líneas temáticas y CTel',        secciones:['S1: Identificación','S2: Resumen (inicio)']},
+  {id:2, title:'Problema central',               secciones:['S3: Árbol de problemas – Problema']},
+  {id:3, title:'Causas y efectos',               secciones:['S3: Árbol de problemas – Causas/Efectos']},
+  {id:4, title:'Árbol de objetivos',             secciones:['S4: Árbol de objetivos']},
+  {id:5, title:'Objetivo específico',            secciones:['S5: Objetivo específico y resultados']},
+  {id:6, title:'Objetivo general y actividades', secciones:['S5: Objetivo general','S7: Actividades']},
+  {id:7, title:'Indicadores IOV',                secciones:['S6: Matriz MML – Indicadores','S9: Productos']},
+  {id:8, title:'Medios y supuestos',             secciones:['S6: Matriz MML – completa']},
+  {id:9, title:'Elegibilidad y anexos',          secciones:['S13: Criterios','S14: Anexos']},
+  {id:10,title:'Integración final',              secciones:['S11: Sostenibilidad','S12: Impactos']}
+];
+
+const MUNICIPIOS = ['Aldana','Contadero','Córdoba','Cuaspud','Cumbal','Funes','Guachucal','Guaitarilla','Gualmatán','Iles','Imués','Ipiales','Ospina','Potosí','Puerres','Pupiales','Ricaurte','Sapuyes','Túquerres'];
+
+const LINEAS = [
+  {id:'bio', label:'Bioeconomía y producción sostenible'},
+  {id:'tur', label:'Turismo, cultura y expresiones creativas'},
+  {id:'dig', label:'Transformación digital y tecnologías aplicadas'},
+  {id:'inn', label:'Innovación social y comunitaria'}
+];
+
+const ADJETIVOS = ['reducido','limitado','deficiente','elevado','escaso','frágil','inestable','bajo','excesivo','deteriorado','insuficiente','débil'];
+const VERBOS_OK = ['aumentar','reducir','mejorar','fortalecer','disminuir','estabilizar','incrementar'];
+const VERBOS_NO = ['apoyar','fomentar','impulsar','promover'];
+const TIPOS_MINCI = ['Prototipo','Software','Manual técnico','Artículo científico','Material de divulgación','Evento de apropiación social','Informe técnico','Metodología'];
+
+// ─────────────────────────────────────────────────────────────
+// ESTADO
+// ─────────────────────────────────────────────────────────────
+let state = {
+  loggedIn: false,
+  user: null,
+  accessToken: null,
+  driveFileId: null,
+  saveStatus: 'idle', // idle | saving | saved
+  session: 1,
+  completed: [],
+  data: {
+    titulo:'', equipo:'', municipios:[], linea:'', sublinea:'', duracion:'', palabras:'', fecha: new Date().toLocaleDateString('es-CO',{month:'long',year:'numeric'}),
+    beneficiarios_num:'', beneficiarios_desc:'', nini: false,
+    resumen:'',
+    problema:'',
+    efectos_directos:['','',''], efectos_indirectos:['',''],
+    causas_directas:['','',''], causas_indirectas:['',''],
+    obj_central:'',
+    fines_directos:['','',''], fines_indirectos:['',''],
+    medios_directos:['','',''], medios_indirectos:['',''],
+    obj_general:'', obj_especifico:'',
+    resultados:['','','',''],
+    actividades:{},
+    iov_proposito:{ind:'',base:'',meta:'',plazo:''},
+    iov_resultados:[{ind:'',base:'',meta:'',plazo:''},{ind:'',base:'',meta:'',plazo:''},{ind:'',base:'',meta:'',plazo:''},{ind:'',base:'',meta:'',plazo:''}],
+    fin_indicador:'', fin_medver:'', fin_supuesto:'',
+    medver_proposito:'', supuestos_proposito:'',
+    medver_resultados:['','','',''], supuestos_resultados:['','','',''],
+    precondiciones:'',
+    productos:[{nombre:'',tipo:'',trl:'',ind:'',medver:'',fecha:''}],
+    presupuesto:[
+      {rubro:'Servicios personales directos',cant:'1',tiempo:'',unit:'',notas:''},
+      {rubro:'Materiales y suministros para formación',cant:'1',tiempo:'',unit:'',notas:''},
+      {rubro:'Viáticos y gastos de viaje',cant:'1',tiempo:'',unit:'',notas:''},
+      {rubro:'Servicios personales indirectos',cant:'1',tiempo:'',unit:'',notas:''}
+    ],
+    riesgos:[
+      {tipo:'Operacional',desc:'',prob:'Posible',impacto:'Moderado',mitigacion:''},
+      {tipo:'Técnico',desc:'',prob:'Posible',impacto:'Alto',mitigacion:''}
+    ],
+    sostenibilidad_ambiental:'', sostenibilidad_social:'', sostenibilidad_capacidades:'',
+    impacto_formacion:'', impacto_social:'', impacto_ambiental:'', impacto_tecnologico:'',
+    anexos:{a1:false,a2:false,a3:false,a4:false,a5:false,a6:false}
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GOOGLE AUTH & DRIVE
+// ─────────────────────────────────────────────────────────────
+let tokenClient;
+
+function initGoogle() {
+  if (!window.google || GOOGLE_CLIENT_ID.includes('TU_CLIENT_ID')) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: SCOPES,
+    callback: handleTokenResponse,
+  });
+}
+
+function handleTokenResponse(resp) {
+  if (resp.error) {
+    if (resp.error === 'access_denied') showToast('Acceso denegado. Intenta de nuevo.', 'error');
+    else showToast('Error de autorización: ' + resp.error, 'error');
+    return;
+  }
+  state.accessToken = resp.access_token;
+  // Token expires in ~1 hour — schedule silent refresh at 50 min
+  clearTimeout(state._tokenTimer);
+  state._tokenTimer = setTimeout(() => {
+    if (state.loggedIn && tokenClient) {
+      tokenClient.requestAccessToken({ prompt: '' }); // silent refresh
+    }
+  }, 50 * 60 * 1000);
+  fetchUserInfo();
+}
+
+async function fetchUserInfo() {
+  try {
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: 'Bearer ' + state.accessToken }
+    });
+    const u = await r.json();
+    state.user = { name: u.name || u.email, email: u.email, picture: u.picture || '' };
+    state.loggedIn = true;
+    await loadFromDrive();
+    render();
+  } catch(e) { showToast('Error al obtener perfil de usuario', 'error'); }
+}
+
+function signIn() {
+  if (!tokenClient) {
+    showToast('Configura el Client ID de Google Cloud primero (ver instrucciones en el README)', 'error');
+    // For demo: allow offline use
+    state.loggedIn = true;
+    state.user = { name: 'Usuario de demostración', email: 'demo@local', picture: '' };
+    loadFromLocalStorage();
+    render();
+    return;
+  }
+  tokenClient.requestAccessToken();
+}
+
+function signOut() {
+  if (state.accessToken) google.accounts.oauth2.revoke(state.accessToken);
+  state.loggedIn = false; state.user = null; state.accessToken = null;
+  state.driveFileId = null;
+  render();
+}
+
+// ── Drive: load ──────────────────────────────────────────────
+async function loadFromDrive() {
+  if (!state.accessToken) return;
+  try {
+    // search in appDataFolder
+    const search = await fetch(
+      `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${APP_FILE_NAME}'&fields=files(id,name)`,
+      { headers: { Authorization: 'Bearer ' + state.accessToken } }
+    );
+    const res = await search.json();
+    if (res.files && res.files.length > 0) {
+      state.driveFileId = res.files[0].id;
+      const fileRes = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${state.driveFileId}?alt=media`,
+        { headers: { Authorization: 'Bearer ' + state.accessToken } }
+      );
+      const saved = await fileRes.json();
+      // Merge saved data with defaults
+      state.data = Object.assign({}, state.data, saved.data || {});
+      state.completed = saved.completed || [];
+      state.session = saved.session || 1;
+      showToast('Datos cargados desde Google Drive ✓', 'green');
+    }
+  } catch(e) {
+    console.warn('Drive load error:', e);
+    loadFromLocalStorage();
+  }
+}
+
+// ── Drive: save ──────────────────────────────────────────────
+let saveTimer = null;
+function scheduleSave() {
+  state.saveStatus = 'saving';
+  updateSaveStatus();
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 1800);
+}
+
+async function doSave() {
+  const payload = JSON.stringify({ data: state.data, completed: state.completed, session: state.session, savedAt: new Date().toISOString() });
+  if (state.accessToken) {
+    await saveToDrive(payload);
+  } else {
+    saveToLocalStorage(payload);
+  }
+  // always keep localStorage as backup layer
+  saveToLocalStorage(payload);
+  state.saveStatus = 'saved';
+  updateSaveStatus();
+}
+
+// ── Export JSON backup ──────────────────────────────────────
+function exportJSON() {
+  const payload = {
+    version: 2,
+    proyecto: state.data.titulo || 'SinNombre',
+    exportadoEl: new Date().toLocaleString('es-CO'),
+    data: state.data,
+    completed: state.completed,
+    session: state.session
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const nombre = (state.data.titulo || 'FormuladorMML').replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
+  a.download = nombre + '_respaldo.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Respaldo JSON descargado ✓', 'green');
+}
+
+// ── Import JSON restore ─────────────────────────────────────
+function importJSON() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        if (!parsed.data) throw new Error('Formato inválido');
+        // merge carefully — keep defaults for missing keys
+        state.data = Object.assign({}, state.data, parsed.data);
+        state.completed = parsed.completed || [];
+        state.session = parsed.session || 1;
+        scheduleSave();
+        render();
+        showToast('Datos restaurados desde respaldo ✓', 'green');
+      } catch(err) {
+        showToast('Error al leer el archivo: ' + err.message, 'error');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+async function saveToDrive(payload) {
+  try {
+    const metadata = { name: APP_FILE_NAME, parents: state.driveFileId ? undefined : ['appDataFolder'] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', new Blob([payload], { type: 'application/json' }));
+    const method = state.driveFileId ? 'PATCH' : 'POST';
+    const url = state.driveFileId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${state.driveFileId}?uploadType=multipart`
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+    const r = await fetch(url, { method, headers: { Authorization: 'Bearer ' + state.accessToken }, body: form });
+    const res = await r.json();
+    if (res.id) state.driveFileId = res.id;
+  } catch(e) {
+    saveToLocalStorage(payload);
+    console.warn('Drive save failed, using localStorage:', e);
+  }
+}
+
+function saveToLocalStorage(payload) {
+  try {
+    localStorage.setItem('formuladorMML_data', payload);
+    localStorage.setItem('formuladorMML_lastSaved', Date.now().toString());
+  } catch(e) {}
+}
+
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem('formuladorMML_data');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      state.data = Object.assign({}, state.data, saved.data || {});
+      state.completed = saved.completed || [];
+      state.session = saved.session || 1;
+    }
+  } catch(e) {}
+}
+
+function updateSaveStatus() {
+  const el = document.getElementById('save-status-text');
+  const dot = document.getElementById('save-dot');
+  if (!el || !dot) return;
+  if (state.saveStatus === 'saving') {
+    el.textContent = 'Guardando…';
+    dot.className = 'save-dot saving';
+  } else {
+    el.textContent = 'Guardado en Drive';
+    dot.className = 'save-dot saved';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function sv(path, val) {
+  const parts = path.split('.');
+  let obj = state.data;
+  for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
+  obj[parts[parts.length - 1]] = val;
+  scheduleSave();
+  render();
+}
+function svArr(key, idx, val) { state.data[key][idx] = val; scheduleSave(); render(); }
+function svArrObj(key, idx, field, val) { if(state.data[key][idx]) state.data[key][idx][field] = val; scheduleSave(); render(); }
+function svNested(key, field, val) { state.data[key][field] = val; scheduleSave(); render(); }
+function svNestedArr(key, idx, field, val) { if(!state.data[key][idx]) state.data[key][idx]={}; state.data[key][idx][field]=val; scheduleSave(); render(); }
+function toggleMuni(m) {
+  const idx = state.data.municipios.indexOf(m);
+  if (idx > -1) state.data.municipios.splice(idx, 1); else state.data.municipios.push(m);
+  scheduleSave(); render();
+}
+function progress() { return Math.round((state.completed.length / 10) * 100); }
+function markDone() {
+  if (!state.completed.includes(state.session)) state.completed.push(state.session);
+  if (state.session < 10) state.session++;
+  scheduleSave(); render();
+  window.scrollTo(0,0);
+}
+function goSession(id) { state.session = id; render(); window.scrollTo(0,0); }
+function calcTotal(r) {
+  const c = parseFloat(r.cant)||1, t = parseFloat(r.tiempo)||1, u = parseFloat(r.unit)||0;
+  return Math.round(c*t*u).toLocaleString('es-CO');
+}
+function autoTransform(p) {
+  if (!p) return '';
+  const map = {reducido:'mejorado',limitado:'fortalecido',deficiente:'mejorado',elevado:'reducido',
+    escaso:'incrementado',frágil:'fortalecida',inestable:'estabilizado',bajo:'incrementado',
+    excesivo:'reducido',deteriorado:'mejorado',insuficiente:'suficiente',débil:'fortalecido'};
+  let r = p;
+  ADJETIVOS.forEach(a => { if (map[a] && r.toLowerCase().includes(a)) r = r.replace(new RegExp(a,'gi'), map[a]); });
+  return r;
+}
+function showToast(msg, type='default') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type==='green'?' green':type==='error'?' ' :'');
+  setTimeout(() => { t.className = 'toast'; }, 3200);
+}
+function svActiv(i, val) { state.data.actividades[i] = val; scheduleSave(); render(); }
+function svActStruct(ri, ai, val) {
+  if(!Array.isArray(state.data.actividades_struct)) state.data.actividades_struct = [];
+  if(!state.data.actividades_struct[ri]) state.data.actividades_struct[ri] = [{texto:""}];
+  state.data.actividades_struct[ri][ai] = {texto: val};
+  scheduleSave(); render();
+}
+function addActStruct(ri) {
+  if(!Array.isArray(state.data.actividades_struct)) state.data.actividades_struct = [];
+  if(!state.data.actividades_struct[ri]) state.data.actividades_struct[ri] = [];
+  state.data.actividades_struct[ri].push({texto:""});
+  scheduleSave(); render();
+}
+function rmActStruct(ri, ai) {
+  if(state.data.actividades_struct && state.data.actividades_struct[ri]) {
+    state.data.actividades_struct[ri].splice(ai, 1);
+    if(state.data.actividades_struct[ri].length === 0) state.data.actividades_struct[ri] = [{texto:""}];
+  }
+  scheduleSave(); render();
+}
+
+// ─────────────────────────────────────────────────────────────
+// PDF EXPORT
+// ─────────────────────────────────────────────────────────────
+async function exportPDF() {
+  showToast('Generando PDF, por favor espera…');
+  const el = document.getElementById('pdf-content');
+  if (!el) { showToast('Completa más secciones antes de exportar', 'error'); return; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfH = pdf.internal.pageSize.getHeight();
+    const ratio = canvas.width / canvas.height;
+    const imgH = pdfW / ratio;
+    let y = 0;
+    while (y < imgH) {
+      if (y > 0) pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, -y, pdfW, imgH);
+      y += pdfH;
+    }
+    const nombre = (state.data.titulo || 'ProyectoMML').replace(/[^a-zA-Z0-9]/g,'_').substring(0,40);
+    pdf.save(`${nombre}_MML.pdf`);
+    showToast('PDF descargado ✓', 'green');
+  } catch(e) {
+    showToast('Error al generar PDF: ' + e.message, 'error');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────────────────────
+function render() {
+  document.getElementById('root').innerHTML = state.loggedIn ? renderApp() : renderLogin();
+  // re-init google after first render
+  setTimeout(initGoogle, 100);
+}
+
+// ── Login ────────────────────────────────────────────────────
+function renderLogin() {
+  return `
+  <div class="login-screen">
+    <div class="login-card">
+      <div class="login-icon">🌿</div>
+      <h1>Formulador MML</h1>
+      <p class="subtitle">Plantilla interactiva de formulación de proyectos con Metodología de Marco Lógico</p>
+      <div class="convoc">Jóvenes en Ciencia para la Paz – Capítulo Ipiales</div>
+      <div class="login-features">
+        <div class="login-feat"><div class="feat-dot"></div>10 sesiones de formulación guiadas</div>
+        <div class="login-feat"><div class="feat-dot"></div>Guardado automático en Google Drive</div>
+        <div class="login-feat"><div class="feat-dot"></div>Exportación a PDF lista para entregar</div>
+        <div class="login-feat"><div class="feat-dot"></div>Árbol de problemas, MML y presupuesto</div>
+      </div>
+      <button class="google-btn" onclick="signIn()">
+        <svg class="google-logo" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continuar con Google
+      </button>
+      <p class="login-note">Tus datos se guardan de forma privada en tu propio Google Drive.<br>Puedes retomar desde cualquier dispositivo.</p>
+    </div>
+  </div>`;
+}
+
+// ── App shell ────────────────────────────────────────────────
+function renderApp() {
+  const p = progress();
+  const user = state.user || {};
+  const isDemoUser = !state.accessToken;
+  // show unsaved warning if localStorage hasn't been updated in > 5 min
+  const lastSavedRaw = localStorage.getItem('formuladorMML_lastSaved');
+  const minutesSinceSave = lastSavedRaw ? Math.round((Date.now() - parseInt(lastSavedRaw)) / 60000) : null;
+  return `
+  <div id="app">
+    <div class="topbar">
+      <div class="topbar-brand">Formulador <span>MML</span></div>
+      <div class="topbar-right">
+        ${isDemoUser ? `<span style="font-size:11px;color:#fde68a;background:rgba(255,255,255,0.12);padding:3px 10px;border-radius:12px;cursor:pointer" onclick="signIn()" title="Conectar Drive para respaldo automático">
+          ⚠ Sin Drive — datos solo en este navegador. Clic para conectar
+        </span>` :
+          `<div class="save-status"><div class="save-dot saved" id="save-dot"></div><span id="save-status-text">Guardado en Drive</span></div>`}
+        <div class="user-pill">
+          ${user.picture ? `<img src="${user.picture}" class="user-avatar" referrerpolicy="no-referrer">` :
+            `<div class="user-initials">${(user.name||'U').charAt(0).toUpperCase()}</div>`}
+          <span>${(user.name||'Usuario').split(' ')[0]}</span>
+        </div>
+        <button class="btn btn-sm" onclick="signOut()" style="color:#a8d5b8;border-color:rgba(255,255,255,0.2);background:transparent;font-size:12px">Salir</button>
+      </div>
+    </div>
+    <div class="main-layout">
+      <div class="sidebar">
+        <div class="sidebar-title">Sesiones del taller</div>
+        <div class="progress-ring"><div class="progress-fill" style="width:${p}%"></div></div>
+        <div style="font-size:11px;color:var(--ink-soft);padding:0 16px 10px;text-align:right">${p}% completado</div>
+        ${SESIONES.map(s => `
+          <div class="sess-item ${state.session===s.id?'active':''} ${state.completed.includes(s.id)?'done':''}" onclick="goSession(${s.id})">
+            <div class="sess-num">${state.completed.includes(s.id) ? '✓' : s.id}</div>
+            <div class="sess-label">${s.title}</div>
+          </div>`).join('')}
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-action" onclick="showPDFPreview()">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Vista previa / PDF
+        </div>
+        <div class="sidebar-action" onclick="exportPDF()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF
+        </div>
+        <div class="sidebar-divider"></div>
+        <div style="padding:6px 16px 2px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:var(--ink-soft)">Respaldo de datos</div>
+        <div class="sidebar-action" onclick="exportJSON()" title="Descarga un archivo JSON con todo tu formulario">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar respaldo .json
+        </div>
+        <div class="sidebar-action" onclick="importJSON()" title="Restaura tu formulario desde un archivo JSON guardado">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar respaldo .json
+        </div>
+      </div>
+      <div class="content">
+        <div class="content-inner">
+          ${renderSession()}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Session dispatcher ───────────────────────────────────────
+function renderSession() {
+  const sess = SESIONES[state.session - 1];
+  const isDone = state.completed.includes(state.session);
+  let body = '';
+  switch(state.session) {
+    case 1:  body = renderS1(); break;
+    case 2:  body = renderS2(); break;
+    case 3:  body = renderS3(); break;
+    case 4:  body = renderS4(); break;
+    case 5:  body = renderS5(); break;
+    case 6:  body = renderS6(); break;
+    case 7:  body = renderS7(); break;
+    case 8:  body = renderS8(); break;
+    case 9:  body = renderS9(); break;
+    case 10: body = renderS10(); break;
+  }
+  return `
+    <div class="section-header">
+      <div class="badge-row">
+        <span class="badge badge-sesion">Sesión ${state.session} de 10</span>
+        ${sess.secciones.map(s=>`<span class="badge badge-seccion">${s}</span>`).join('')}
+      </div>
+      <h2>${sess.title}</h2>
+      <p>${sess.secciones.join(' · ')}</p>
+    </div>
+    ${body}
+    <div class="complete-btn-row">
+      <button class="btn" onclick="goSession(${Math.max(1,state.session-1)})" ${state.session===1?'disabled':''}>
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Anterior
+      </button>
+      <button class="btn ${isDone?'':'btn-primary'}" onclick="markDone()" style="${isDone?'background:var(--green-light);color:var(--green);border-color:var(--green-mid)':''}">
+        ${isDone ? '✓ Completada — Siguiente sesión →' : 'Marcar como completada →'}
+      </button>
+    </div>`;
+}
+
+// ── S1: Identificación ───────────────────────────────────────
+function renderS1() {
+  const d = state.data;
+  const linLabel = LINEAS.find(l=>l.id===d.linea);
+  return `
+  <div class="card">
+    <div class="card-title">Sección 1 — Identificación del proyecto</div>
+    <div class="note">Complete todos los campos. El nombre del proyecto debe tener máximo 20 palabras y expresar claramente la solución propuesta.</div>
+    <div class="field"><label class="lbl">Nombre del proyecto <span>(máx. 20 palabras)</span></label>
+      <input type="text" value="${d.titulo}" oninput="sv('titulo',this.value)" placeholder="Ej: Sistema de monitoreo ambiental comunitario para fuentes hídricas de Cumbal mediante tecnologías IoT de bajo costo"></div>
+    <div class="row3">
+      <div class="field"><label class="lbl">Formulador 1 <span>(nombre completo)</span></label>
+        <input type="text" value="${d.formulador1||''}" oninput="sv('formulador1',this.value)" placeholder="Nombre completo"></div>
+      <div class="field"><label class="lbl">Formulador 2 <span>(si aplica)</span></label>
+        <input type="text" value="${d.formulador2||''}" oninput="sv('formulador2',this.value)" placeholder="Nombre completo"></div>
+      <div class="field"><label class="lbl">Formulador 3 <span>(si aplica)</span></label>
+        <input type="text" value="${d.formulador3||''}" oninput="sv('formulador3',this.value)" placeholder="Nombre completo"></div>
+    </div>
+    <div class="field"><label class="lbl">Duración del proyecto <span>(meses)</span></label>
+      <input type="number" min="1" max="24" value="${d.duracion}" oninput="sv('duracion',this.value)" placeholder="12"></div>
+    <div class="field"><label class="lbl">Línea temática</label>
+      <div class="chip-group">
+        ${LINEAS.map(l=>`<div class="chip ${d.linea===l.id?'sel':''}" onclick="sv('linea','${l.id}')">${l.label}</div>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label class="lbl">Sublínea específica <span>(redactar según la convocatoria)</span></label>
+      <input type="text" value="${d.sublinea}" oninput="sv('sublinea',this.value)" placeholder="Ej: Agricultura de precisión y tecnologías para la producción sostenible"></div>
+    <div class="field"><label class="lbl">Municipios de ejecución <span>(suroccidente nariñense)</span></label>
+      <div class="muni-grid">${MUNICIPIOS.map(m=>`<div class="muni-chip ${d.municipios.includes(m)?'sel':''}" onclick="toggleMuni('${m}')">${m}</div>`).join('')}</div>
+      ${d.municipios.length>0?`<div class="tag-list" style="margin-top:8px">${d.municipios.map(m=>`<span class="tag">${m}</span>`).join('')}</div>`:''}
+    </div>
+    <div class="row3">
+      <div class="field"><label class="lbl">N.° beneficiarios directos</label>
+        <input type="number" value="${d.beneficiarios_num}" oninput="sv('beneficiarios_num',this.value)" placeholder="30"></div>
+      <div class="field" style="grid-column:span 2"><label class="lbl">Caracterización de beneficiarios</label>
+        <input type="text" value="${d.beneficiarios_desc}" oninput="sv('beneficiarios_desc',this.value)" placeholder="Jóvenes 18-28 años, residentes en el municipio de…, agricultores del sector rural"></div>
+    </div>
+    <div class="field"><label class="lbl">Palabras clave <span>(3 a 5, separadas por coma)</span></label>
+      <input type="text" value="${d.palabras}" oninput="sv('palabras',this.value)" placeholder="IoT, monitoreo hídrico, innovación rural, tecnología aplicada, apropiación comunitaria"></div>
+    <div class="note" style="background:var(--green-light);border-left-color:var(--green);margin-top:8px">
+      <strong>Contexto de uso:</strong> Esta herramienta es para la <strong>ejecución del proyecto</strong> con recursos ya asignados. 
+      Use la Metodología de Marco Lógico para planificar, ejecutar y hacer seguimiento correcto del recurso recibido.
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Sección 2 — Resumen ejecutivo <span style="font-weight:400;text-transform:none">(inicio — completar al finalizar)</span></div>
+    <div class="note"><strong>Ejercicio práctico sesión 1:</strong> Redacte una frase que vincule su iniciativa con las tres definiciones CTel y la apropiación social del conocimiento. Esta frase será la base del problema central en la sesión 2.</div>
+    <div class="field"><label class="lbl">Frase CTel / base para el resumen <span>(máx. 500 palabras al final)</span></label>
+      <textarea rows="5" oninput="sv('resumen',this.value)" placeholder="Esta iniciativa aplica conocimiento científico sobre [tema] para desarrollar una tecnología de [tipo] que innova en [aspecto], transfiriendo el conocimiento a las comunidades del suroccidente nariñense mediante espacios de diálogo de saberes y co-creación…">${d.resumen}</textarea>
+    </div>
+  </div>`;
+}
+
+// ── S2: Problema central ─────────────────────────────────────
+function renderS2() {
+  const d = state.data;
+  const hasAdj = ADJETIVOS.some(a => d.problema.toLowerCase().includes(a));
+  const noAusencia = !d.problema.toLowerCase().includes('falta de') && !d.problema.toLowerCase().includes('ausencia de');
+  return `
+  <div class="card">
+    <div class="card-title">Sección 3 — Árbol de problemas: Problema central</div>
+    <div class="note"><strong>Definición Marco Lógico:</strong> El problema es una situación existente y negativa para los jóvenes del suroccidente nariñense. <strong>No es la ausencia de una solución</strong> (evitar "falta de…" o "ausencia de…").<br><br>
+    <strong>Adjetivos recomendados:</strong> ${ADJETIVOS.join(' · ')}</div>
+    <div class="field"><label class="lbl">Problema central <span>(una oración con 1-2 adjetivos de la lista)</span></label>
+      <textarea rows="3" oninput="sv('problema',this.value)" placeholder="Ej: Limitado acceso de los jóvenes rurales del municipio de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas">${d.problema}</textarea>
+    </div>
+    ${d.problema ? `
+    <div class="note ${hasAdj && noAusencia ? 'success' : 'warn'}">
+      ${hasAdj ? '✓ Contiene un adjetivo negativo adecuado.' : '⚠ Incluya un adjetivo como: ' + ADJETIVOS.slice(0,5).join(', ')}
+      ${noAusencia ? ' ✓ No está redactado como ausencia de solución.' : ' ⚠ Evite "falta de…" o "ausencia de…"'}
+    </div>` : ''}
+    <div class="note" style="margin-top:12px">
+      <strong>Verificación final (sesión 2):</strong><br>
+      ☐ El problema contiene un adjetivo negativo<br>
+      ☐ Expresa una situación actual (no una ausencia de solución)<br>
+      ☐ Está relacionado con el territorio del suroccidente nariñense<br>
+      ☐ Afecta a los jóvenes entre 18 y 28 años de los municipios listados
+    </div>
+  </div>`;
+}
+
+// ── helpers: árbol jerárquico visual ─────────────────────────
+function treeBox(text, bg, border, textColor, placeholder, inputId) {
+  return `<div style="background:${bg};border:1.5px solid ${border};border-radius:8px;padding:8px 10px;min-height:64px;display:flex;flex-direction:column;justify-content:flex-start">
+    <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:${textColor};opacity:0.7;margin-bottom:4px">${placeholder.split('…')[0].split('(')[0].trim()}</div>
+    <textarea rows="2" style="background:transparent;border:none;font-family:var(--font-body);font-size:12px;color:var(--ink);resize:none;flex:1;padding:0;min-height:36px" placeholder="${placeholder}" oninput="${inputId}">${text}</textarea>
+  </div>`;
+}
+function connector(color='#9ca3af') {
+  return `<div style="display:flex;justify-content:center;height:20px"><div style="width:2px;background:${color};height:100%"></div></div>`;
+}
+function hConnectorRow(n, color='#9ca3af') {
+  if(n<=1) return connector(color);
+  const pct = Math.round(100/(n)*10)/10;
+  return `<div style="display:flex;align-items:flex-end;height:28px;position:relative">
+    <div style="position:absolute;left:${pct*0.6}%;right:${pct*0.6}%;top:0;height:2px;background:${color}"></div>
+    ${Array.from({length:n},(_,i)=>`<div style="flex:1;display:flex;justify-content:center"><div style="width:2px;height:28px;background:${color}"></div></div>`).join('')}
+  </div>`;
+}
+function addRowBtn(label, key, defaultVal, style='') {
+  return `<button class="btn btn-sm" style="margin-top:6px;${style}" onclick="state.data['${key}'].push('${defaultVal}');scheduleSave();render()">+ ${label}</button>`;
+}
+function removeRowBtn(key, idx) {
+  return `<button onclick="state.data['${key}'].splice(${idx},1);scheduleSave();render()" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;line-height:1;padding:2px 4px;flex-shrink:0" title="Eliminar">×</button>`;
+}
+
+// ── S3: Causas y efectos ─────────────────────────────────────
+function renderS3() {
+  const d = state.data;
+  const N_CD = d.causas_directas.length;
+  const N_ED = d.efectos_directos.length;
+  return `
+  <div class="card">
+    <div class="card-title">Sección 3 — Árbol de problemas: Causas y efectos</div>
+    <div class="note"><strong>Lógica causal:</strong> Las <strong>causas</strong> son los "porqués" del problema (nivel inferior). Los <strong>efectos</strong> son las consecuencias (nivel superior). Ninguna causa debe redactarse como "falta de…". Cada causa directa puede tener una causa indirecta asociada.</div>
+    ${!d.problema ? '<div class="note danger">Complete el problema central en la Sesión 2 antes de continuar.</div>' : ''}
+
+    <!-- NIVEL: EFECTOS INDIRECTOS -->
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#1e3a5f;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Efectos 2.° orden</div>
+        ${addRowBtn('Agregar efecto indirecto','efectos_indirectos','','font-size:11px')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_ED,1)},1fr);gap:8px">
+        ${d.efectos_indirectos.map((e,i)=>`
+          <div style="position:relative">
+            ${removeRowBtn('efectos_indirectos',i)}
+            ${treeBox(e,'#dbeafe','#93c5fd','#1e3a5f',`Efecto indirecto ${i+1} (consecuencia de 2.° orden)…`,`svArr('efectos_indirectos',${i},this.value)`)}
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${hConnectorRow(N_ED,'#93c5fd')}
+
+    <!-- NIVEL: EFECTOS DIRECTOS -->
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Efectos directos</div>
+        ${addRowBtn('Agregar efecto directo','efectos_directos','','font-size:11px')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_ED,1)},1fr);gap:8px">
+        ${d.efectos_directos.map((e,i)=>`
+          <div style="position:relative">
+            ${removeRowBtn('efectos_directos',i)}
+            ${treeBox(e,'#eff6ff','#60a5fa','#1d4ed8',`Efecto directo ${i+1} (consecuencia inmediata del problema)…`,`svArr('efectos_directos',${i},this.value)`)}
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${hConnectorRow(N_ED,'#3b82f6')}
+
+    <!-- PROBLEMA CENTRAL -->
+    <div style="background:var(--green);border-radius:10px;padding:12px 16px;margin:0 0 4px;display:flex;align-items:center;gap:12px">
+      <div style="background:rgba(255,255,255,0.15);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap">Problema central</div>
+      <div style="color:#fff;font-size:13px;font-weight:500;flex:1">${d.problema||'<em style="opacity:0.6">(Definir en Sesión 2)</em>'}</div>
+    </div>
+
+    ${hConnectorRow(N_CD,'#f59e0b')}
+
+    <!-- NIVEL: CAUSAS DIRECTAS -->
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#92400e;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Causas directas</div>
+        ${addRowBtn('Agregar causa directa','causas_directas','','font-size:11px')}
+        <span style="font-size:11px;color:var(--ink-soft)">— 1 causa indirecta asociada a cada una</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_CD,1)},1fr);gap:8px">
+        ${d.causas_directas.map((c,i)=>`
+          <div>
+            <div style="position:relative">
+              ${removeRowBtn('causas_directas',i)}
+              ${treeBox(c,'#fffbeb','#fbbf24','#92400e',`Causa directa ${i+1} (no usar "falta de…")…`,`svArr('causas_directas',${i},this.value)`)}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${hConnectorRow(N_CD,'#f59e0b')}
+
+    <!-- NIVEL: CAUSAS INDIRECTAS — una por columna, alineada a su causa directa -->
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#78350f;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Causas 2.° orden</div>
+        <span style="font-size:11px;color:var(--ink-soft)">— una por causa directa</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_CD,1)},1fr);gap:8px">
+        ${d.causas_directas.map((_,i)=>{
+          // ensure array is long enough
+          while(d.causas_indirectas.length <= i) d.causas_indirectas.push('');
+          return `${treeBox(d.causas_indirectas[i],'#fef3c7','#fcd34d','#78350f',`Causa 2.° orden para causa ${i+1}…`,`svArr('causas_indirectas',${i},this.value)`)}`;
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── S4: Árbol de objetivos ───────────────────────────────────
+function renderS4() {
+  const d = state.data;
+  const autoObjC = autoTransform(d.problema);
+  const N_MD = d.medios_directos.length;
+  const N_FD = d.fines_directos.length;
+  return `
+  <div class="card">
+    <div class="card-title">Sección 4 — Árbol de objetivos</div>
+    <div class="note"><strong>Transformación:</strong> Cada problema se convierte en estado positivo alcanzado. Las causas → <strong>medios</strong>. Los efectos → <strong>fines</strong>. Redacte en tiempo pasado o como estado logrado. La estructura espeja el árbol de problemas.</div>
+    ${autoObjC ? `<div class="note" style="background:var(--green-light);border-left-color:var(--green)">
+      <strong>Sugerencia automática para objetivo central:</strong> <em>${autoObjC}</em>
+      <button class="btn btn-sm" style="margin-top:6px" onclick="sv('obj_central','${autoObjC.replace(/'/g,"\\'")}')">Usar esta sugerencia</button>
+    </div>` : ''}
+
+    <!-- NIVEL: FINES INDIRECTOS -->
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#1e3a5f;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Fines 2.° orden</div>
+        ${addRowBtn('Agregar fin indirecto','fines_indirectos','','font-size:11px')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_FD,1)},1fr);gap:8px">
+        ${d.fines_indirectos.map((f,i)=>`
+          <div style="position:relative">
+            ${removeRowBtn('fines_indirectos',i)}
+            ${treeBox(f,'#dbeafe','#93c5fd','#1e3a5f',`Fin indirecto ${i+1} (logro de largo plazo)…`,`svArr('fines_indirectos',${i},this.value)`)}
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${hConnectorRow(N_FD,'#93c5fd')}
+
+    <!-- NIVEL: FINES DIRECTOS -->
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Fines directos</div>
+        ${addRowBtn('Agregar fin directo','fines_directos','','font-size:11px')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_FD,1)},1fr);gap:8px">
+        ${d.fines_directos.map((f,i)=>`
+          <div style="position:relative">
+            ${removeRowBtn('fines_directos',i)}
+            ${treeBox(f,'#eff6ff','#60a5fa','#1d4ed8',`Fin directo ${i+1} (logro al alcanzar el objetivo central)…`,`svArr('fines_directos',${i},this.value)`)}
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${hConnectorRow(N_FD,'#3b82f6')}
+
+    <!-- OBJETIVO CENTRAL -->
+    <div style="border:2px solid var(--green);border-radius:10px;padding:10px 14px;margin:0 0 4px;display:flex;gap:12px;align-items:flex-start">
+      <div style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap;margin-top:2px">🎯 Objetivo central</div>
+      <textarea rows="2" style="flex:1;background:transparent;border:none;font-family:var(--font-body);font-size:13px;font-weight:500;color:var(--ink);resize:none;padding:0" oninput="sv('obj_central',this.value)" placeholder="Ej: Acceso mejorado de los jóvenes rurales de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas">${d.obj_central}</textarea>
+    </div>
+
+    ${hConnectorRow(N_MD,'#16a34a')}
+
+    <!-- NIVEL: MEDIOS DIRECTOS -->
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#15803d;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Medios directos</div>
+        ${addRowBtn('Agregar medio directo','medios_directos','','font-size:11px')}
+        <span style="font-size:11px;color:var(--ink-soft)">— corresponden a los resultados esperados (S5)</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_MD,1)},1fr);gap:8px">
+        ${d.medios_directos.map((m,i)=>`
+          <div>
+            <div style="position:relative">
+              ${removeRowBtn('medios_directos',i)}
+              ${treeBox(m,'#f0fdf4','#4ade80','#15803d',`Medio directo ${i+1} (resultado esperado)…`,`svArr('medios_directos',${i},this.value)`)}
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${hConnectorRow(N_MD,'#16a34a')}
+
+    <!-- NIVEL: MEDIOS INDIRECTOS — alineados a medios directos -->
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="background:#166534;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Medios 2.° orden</div>
+        <span style="font-size:11px;color:var(--ink-soft)">— uno por medio directo</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(${Math.max(N_MD,1)},1fr);gap:8px">
+        ${d.medios_directos.map((_,i)=>{
+          while(d.medios_indirectos.length <= i) d.medios_indirectos.push('');
+          return treeBox(d.medios_indirectos[i],'#dcfce7','#86efac','#166534',`Medio 2.° orden para medio ${i+1}…`,`svArr('medios_indirectos',${i},this.value)`);
+        }).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── S5: Objetivo específico y resultados ─────────────────────
+function renderS5() {
+  const d = state.data;
+  const firstWord = d.obj_especifico.split(' ')[0].toLowerCase();
+  const badVerb = VERBOS_NO.includes(firstWord);
+  return `
+  <div class="card">
+    <div class="card-title">Sección 5 — Objetivo específico (propósito)</div>
+    <div class="note"><strong>Verbos adecuados:</strong> ${VERBOS_OK.join(', ')}.<br><strong>Verbos no adecuados:</strong> ${VERBOS_NO.join(', ')}.<br>El objetivo específico es único y expresa el efecto concreto que logra el proyecto.</div>
+    <div class="field"><label class="lbl">Objetivo específico</label>
+      <textarea rows="3" oninput="sv('obj_especifico',this.value)" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo e implementación de un prototipo IoT de bajo costo">${d.obj_especifico}</textarea>
+      ${badVerb ? `<div class="note danger" style="margin-top:6px">⚠ El verbo "${d.obj_especifico.split(' ')[0]}" no es adecuado. Use: ${VERBOS_OK.join(', ')}.</div>` : ''}
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Resultados esperados (componentes) — 4 a 6</div>
+    <div class="note">Cada resultado es un cambio o estado alcanzado (no una actividad). Son los medios necesarios y suficientes para lograr el objetivo específico. Se toman del nivel inmediato inferior del árbol de objetivos.</div>
+    ${d.resultados.map((r,i)=>`
+      <div class="comp-row">
+        <div class="comp-num">R${i+1}</div>
+        <input type="text" value="${r}" oninput="svArr('resultados',${i},this.value)" placeholder="Resultado ${i+1}: estado alcanzado, ej: Prototipo IoT diseñado y ensamblado">
+      </div>`).join('')}
+    <button class="btn btn-sm" style="margin-top:6px" onclick="state.data.resultados.push('');scheduleSave();render()">+ Agregar resultado</button>
+  </div>`;
+}
+
+// ── S6: Objetivo general y actividades ──────────────────────
+const SUSTANTIVOS_ACCION = ['Construcción','Capacitación','Diseño','Implementación','Equipamiento','Elaboración','Distribución','Rehabilitación','Sistematización','Socialización','Desarrollo','Instalación','Evaluación','Diagnóstico','Formación'];
+
+function renderS6() {
+  const d = state.data;
+  const autoOG = d.obj_especifico ? 'Contribuir a ' + d.obj_especifico.charAt(0).toLowerCase() + d.obj_especifico.slice(1) : '';
+  const resultadosLlenos = d.resultados.filter(r=>r);
+  // build actividades structure: array of arrays, one per resultado
+  if(!Array.isArray(d.actividades_struct)) {
+    // migrate old actividades to new structure
+    d.actividades_struct = d.resultados.map((_,i) => {
+      const old = d.actividades[i];
+      if(old) return old.split('\n').filter(Boolean).map(t=>({texto:t}));
+      return [{texto:''}];
+    });
+  }
+  // ensure length matches resultados
+  while(d.actividades_struct.length < d.resultados.length) d.actividades_struct.push([{texto:''}]);
+
+  // coherence check
+  const coherencia = {
+    obj_general: !!d.obj_general && d.obj_general.toLowerCase().startsWith('contribuir'),
+    obj_especifico: !!d.obj_especifico && VERBOS_OK.some(v=>d.obj_especifico.toLowerCase().startsWith(v)),
+    resultados: resultadosLlenos.length >= 2,
+    actividades: d.actividades_struct.slice(0,resultadosLlenos.length).every(arr=>arr && arr.some(a=>a.texto))
+  };
+  const allOk = Object.values(coherencia).every(Boolean);
+
+  return `
+  <div class="card">
+    <div class="card-title">Sección 5 — Objetivo general (fin)</div>
+    <div class="note">El objetivo general se redacta comenzando con <strong>"Contribuir a…"</strong>. Se toma del nivel superior del árbol de objetivos.</div>
+    ${autoOG && !d.obj_general ? `<div class="note" style="background:var(--green-light);border-left-color:var(--green)">
+      <strong>Sugerencia:</strong> <em>${autoOG.substring(0,140)}…</em>
+      <button class="btn btn-sm" style="margin-top:6px" onclick="sv('obj_general','${autoOG.replace(/'/g,"\\'")}')">Usar</button>
+    </div>` : ''}
+    <div class="field"><label class="lbl">Objetivo general</label>
+      <textarea rows="3" oninput="sv('obj_general',this.value)" placeholder="Contribuir a…">${d.obj_general}</textarea>
+      ${d.obj_general && !d.obj_general.toLowerCase().startsWith('contribuir') ? '<div class="note danger" style="margin-top:4px">⚠ El objetivo general debe comenzar con "Contribuir a…"</div>' : ''}
+    </div>
+  </div>
+
+  <!-- CADENA DE COHERENCIA -->
+  <div class="card">
+    <div class="card-title">Validación de coherencia — cadena lógica</div>
+    <div class="note">La lógica vertical del Marco Lógico exige que: <strong>Actividades → producen Resultados → logran el Objetivo específico → contribuyen al Objetivo general</strong>. Verifique cada eslabón.</div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${[
+        {label:'Objetivo general',ok:coherencia.obj_general,texto:d.obj_general||'—',tip:'Debe comenzar con "Contribuir a…"',color:'#1d4ed8',bg:'#eff6ff'},
+        {label:'↑ contribuye a',ok:true,texto:'',sep:true,color:'#6b7280',bg:''},
+        {label:'Objetivo específico',ok:coherencia.obj_especifico,texto:d.obj_especifico||'—',tip:'Debe iniciar con verbo adecuado: '+VERBOS_OK.join(', '),color:coherencia.obj_especifico?'#15803d':'#b45309',bg:coherencia.obj_especifico?'#f0fdf4':'#fffbeb'},
+        {label:'↑ logran el propósito',ok:true,texto:'',sep:true,color:'#6b7280',bg:''},
+        {label:`Resultados esperados (${resultadosLlenos.length})`,ok:coherencia.resultados,texto:resultadosLlenos.map((r,i)=>`R${i+1}: ${r}`).join(' · ')||'—',tip:'Mínimo 2 resultados diligenciados',color:coherencia.resultados?'#15803d':'#b45309',bg:coherencia.resultados?'#f0fdf4':'#fffbeb'},
+        {label:'↑ producen resultados',ok:true,texto:'',sep:true,color:'#6b7280',bg:''},
+        {label:'Actividades',ok:coherencia.actividades,texto:coherencia.actividades?'Todas las actividades asociadas a resultados están diligenciadas':'Faltan actividades por diligenciar',tip:'Cada resultado debe tener al menos 1 actividad',color:coherencia.actividades?'#15803d':'#b45309',bg:coherencia.actividades?'#f0fdf4':'#fffbeb'},
+      ].map(item=>item.sep ? `<div style="display:flex;align-items:center;gap:8px;padding:2px 12px"><div style="width:2px;height:20px;background:#d1d5db;margin-left:16px"></div><span style="font-size:11px;color:#9ca3af;font-style:italic">${item.label}</span></div>` :
+        `<div style="display:flex;align-items:flex-start;gap:10px;background:${item.bg};border:1px solid ${item.ok?'#d1d5db':'#fcd34d'};border-radius:8px;padding:8px 12px">
+          <div style="width:20px;height:20px;border-radius:50%;background:${item.ok?'#16a34a':'#f59e0b'};color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${item.ok?'✓':'!'}</div>
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:600;color:${item.color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px">${item.label}</div>
+            <div style="font-size:12px;color:var(--ink-mid);line-height:1.5">${item.texto}</div>
+            ${!item.ok?`<div style="font-size:11px;color:#b45309;margin-top:3px">→ ${item.tip}</div>`:''}
+          </div>
+        </div>`
+      ).join('')}
+    </div>
+    ${allOk ? '<div class="note success" style="margin-top:12px">✓ Cadena lógica verificada. La lógica vertical del Marco Lógico es coherente.</div>' : ''}
+  </div>
+
+  <!-- ACTIVIDADES POR RESULTADO -->
+  <div class="card">
+    <div class="card-title">Sección 7 — Actividades por resultado esperado</div>
+    <div class="note">
+      <strong>Regla de coherencia:</strong> cada resultado esperado define el número de actividades de ese componente. Cada actividad debe iniciar con un <strong>sustantivo de acción</strong>.<br>
+      <strong>Sustantivos válidos:</strong> ${SUSTANTIVOS_ACCION.join(', ')}.
+    </div>
+
+    ${resultadosLlenos.length === 0 ? '<div class="note danger">Defina los resultados esperados en la Sesión 5 antes de agregar actividades.</div>' : ''}
+
+    ${resultadosLlenos.map((r,ri)=>{
+      const actArr = (d.actividades_struct[ri] || [{texto:''}]);
+      while(d.actividades_struct.length <= ri) d.actividades_struct.push([{texto:''}]);
+      const badActIdx = actArr.map((a,ai)=>({ai,bad: a.texto && !SUSTANTIVOS_ACCION.some(s=>a.texto.trimStart().toLowerCase().startsWith(s.toLowerCase()))}));
+      return `
+      <div style="border:1px solid var(--border-light);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px">
+        <!-- Resultado header -->
+        <div style="background:var(--green);padding:10px 14px;display:flex;align-items:center;gap:10px">
+          <div style="background:rgba(255,255,255,0.25);color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:12px">R${ri+1}</div>
+          <div style="color:#fff;font-size:13px;font-weight:500;flex:1">${r}</div>
+          <div style="color:rgba(255,255,255,0.7);font-size:11px">${actArr.filter(a=>a.texto).length} actividad(es)</div>
+        </div>
+        <!-- Actividades -->
+        <div style="padding:12px 14px">
+          ${actArr.map((act,ai)=>{
+            const isBad = act.texto && !SUSTANTIVOS_ACCION.some(s=>act.texto.trimStart().toLowerCase().startsWith(s.toLowerCase()));
+            return `
+            <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+              <div style="background:var(--green-light);color:var(--green);font-size:11px;font-weight:700;padding:4px 8px;border-radius:6px;min-width:40px;text-align:center;flex-shrink:0;margin-top:4px">A${ri+1}.${ai+1}</div>
+              <div style="flex:1">
+                <input type="text" value="${act.texto.replace(/"/g,'&quot;')}"
+                  oninput="svActStruct(${ri},${ai},this.value)"
+                  placeholder="Ej: Capacitación de 30 jóvenes en uso de sensores IoT…"
+                  style="border-color:${isBad?'#f59e0b':'var(--border)'}">
+                ${isBad?`<div style="font-size:11px;color:#b45309;margin-top:2px">⚠ Inicie con sustantivo de acción: ${SUSTANTIVOS_ACCION.slice(0,5).join(', ')}…</div>`:''}
+              </div>
+              ${actArr.length>1?`<button onclick="rmActStruct(${ri},${ai})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:18px;padding:2px 4px;margin-top:2px;flex-shrink:0">×</button>`:''}
+            </div>`;
+          }).join('')}
+          <button class="btn btn-sm" onclick="addActStruct(${ri})" style="margin-top:4px">
+            + Agregar actividad para R${ri+1}
+          </button>
+        </div>
+        <!-- Conexión visual: actividades → resultado -->
+        <div style="background:#f0fdf4;border-top:1px solid var(--border-light);padding:6px 14px;font-size:11px;color:#15803d">
+          ↑ ${actArr.filter(a=>a.texto).length} actividad(es) producen → <strong>R${ri+1}: ${r}</strong>
+        </div>
+      </div>`;
+    }).join('')}
+
+    <!-- Cadena completa al pie -->
+    ${resultadosLlenos.length > 0 ? `
+    <div style="background:var(--green-pale);border:1px solid var(--border-light);border-radius:var(--radius);padding:12px 14px;font-size:12px;color:var(--ink-mid)">
+      <strong style="color:var(--green)">Cadena lógica de actividades:</strong><br>
+      ${resultadosLlenos.map((r,i)=>{
+        const n = (d.actividades_struct[i]||[]).filter(a=>a.texto).length;
+        return `<span style="color:var(--ink-soft)">${n} act.</span> → <strong>R${i+1}</strong>`;
+      }).join(' &nbsp;+&nbsp; ')}
+      &nbsp;→&nbsp; <strong style="color:var(--green)">Objetivo específico</strong>
+      &nbsp;→&nbsp; <strong style="color:#1d4ed8">Objetivo general</strong>
+    </div>` : ''}
+  </div>`;
+}
+
+// ── S7: Indicadores IOV ──────────────────────────────────────
+function renderS7() {
+  const d = state.data;
+  const resultadosLlenos = d.resultados.filter(r=>r);
+  function iovBlock(titulo, color, iov, onInd, onBase, onMeta, onPlazo, idx) {
+    const filled = !!(iov.ind && iov.base && iov.meta && iov.plazo);
+    return `
+    <div style="border:1.5px solid ${filled?'#86efac':'#fca5a5'};border-radius:10px;overflow:hidden;margin-bottom:12px">
+      <div style="background:${color};padding:8px 14px;display:flex;align-items:center;gap:10px">
+        <div style="background:rgba(255,255,255,0.22);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">${titulo}</div>
+        <div style="color:rgba(255,255,255,0.8);margin-left:auto;font-size:16px">${filled?'✓':'○'}</div>
+      </div>
+      <div style="padding:10px 14px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px;background:${filled?'#f0fdf4':'#fffbeb'}">
+        <div>
+          <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#374151;display:block;margin-bottom:3px">Redacción del indicador <span style="color:#dc2626">*</span></label>
+          <textarea rows="2" style="width:100%;background:#fff;border:1px solid ${iov.ind?'#d1d5db':'#fca5a5'};border-radius:7px;padding:6px 9px;font-family:var(--font-body);font-size:12px;color:var(--ink);resize:vertical"
+            placeholder="Al final del proyecto, al menos X% de…" oninput="${onInd}">${iov.ind||''}</textarea>
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#374151;display:block;margin-bottom:3px">Línea de base <span style="color:#dc2626">*</span></label>
+          <input type="text" value="${iov.base||''}" oninput="${onBase}" placeholder="Situación inicial"
+            style="width:100%;font-size:12px;border:1px solid ${iov.base?'#d1d5db':'#fca5a5'};border-radius:7px;padding:6px 9px">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#374151;display:block;margin-bottom:3px">Meta <span style="color:#dc2626">*</span></label>
+          <input type="text" value="${iov.meta||''}" oninput="${onMeta}" placeholder="Valor a alcanzar"
+            style="width:100%;font-size:12px;border:1px solid ${iov.meta?'#d1d5db':'#fca5a5'};border-radius:7px;padding:6px 9px">
+        </div>
+        <div>
+          <label style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#374151;display:block;margin-bottom:3px">Plazo <span style="color:#dc2626">*</span></label>
+          <input type="text" value="${iov.plazo||''}" oninput="${onPlazo}" placeholder="Mes / fecha"
+            style="width:100%;font-size:12px;border:1px solid ${iov.plazo?'#d1d5db':'#fca5a5'};border-radius:7px;padding:6px 9px">
+        </div>
+      </div>
+    </div>`;
+  }
+  return `
+  <div class="card">
+    <div class="card-title">Sección 6 — Indicadores objetivamente verificables (IOV)</div>
+    <div class="note">
+      <strong>Requisitos:</strong> válido · medible · realista · específico (cantidad, calidad, tiempo, grupo meta).<br>
+      <strong>Regla dinámica:</strong> se genera automáticamente <strong>1 bloque de propósito + ${resultadosLlenos.length} bloque(s) de resultado</strong> según los resultados definidos en S5.
+    </div>
+    ${resultadosLlenos.length===0?'<div class="note danger">Define primero los resultados esperados en la Sesión 5.</div>':''}
+
+    <!-- Propósito -->
+    ${iovBlock(
+      'Propósito — Objetivo específico', '#0f766e',
+      d.iov_proposito,
+      "svNested('iov_proposito','ind',this.value)",
+      "svNested('iov_proposito','base',this.value)",
+      "svNested('iov_proposito','meta',this.value)",
+      "svNested('iov_proposito','plazo',this.value)"
+    )}
+
+    <!-- Un bloque por cada resultado -->
+    ${resultadosLlenos.map((r,i)=> iovBlock(
+      `R${i+1}: ${r.substring(0,50)}${r.length>50?'…':''}`,
+      '#15803d',
+      d.iov_resultados[i]||{},
+      `svNestedArr('iov_resultados',${i},'ind',this.value)`,
+      `svNestedArr('iov_resultados',${i},'base',this.value)`,
+      `svNestedArr('iov_resultados',${i},'meta',this.value)`,
+      `svNestedArr('iov_resultados',${i},'plazo',this.value)`
+    )).join('')}
+  </div>
+  <div class="card">
+    <div class="card-title">Sección 9 — Indicadores de producto (tipología MinCiencias)</div>
+    <div class="note">Tipos de producto MinCiencias: ${TIPOS_MINCI.join(', ')}. El TRL aplica si hay desarrollo tecnológico (1=idea, 9=tecnología probada en campo).</div>
+    ${d.productos.map((p,i)=>`
+      <div style="border:1px solid var(--border-light);border-radius:var(--radius);padding:14px;margin-bottom:10px">
+        <div class="row2">
+          <div class="field"><label style="font-size:11px;color:var(--ink-soft)">Nombre del producto</label>
+            <input type="text" value="${p.nombre}" oninput="svArrObj('productos',${i},'nombre',this.value)" placeholder="Prototipo funcional IoT"></div>
+          <div class="field"><label style="font-size:11px;color:var(--ink-soft)">Tipo (MinCiencias)</label>
+            <select onchange="svArrObj('productos',${i},'tipo',this.value)">
+              <option value="">Seleccionar…</option>
+              ${TIPOS_MINCI.map(t=>`<option ${p.tipo===t?'selected':''}>${t}</option>`).join('')}
+            </select></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label style="font-size:11px;color:var(--ink-soft)">TRL (si aplica)</label>
+            <input type="text" value="${p.trl}" oninput="svArrObj('productos',${i},'trl',this.value)" placeholder="TRL 4"></div>
+          <div class="field"><label style="font-size:11px;color:var(--ink-soft)">Medio de verificación</label>
+            <input type="text" value="${p.medver}" oninput="svArrObj('productos',${i},'medver',this.value)" placeholder="Acta de entrega / Registro fotográfico"></div>
+          <div class="field"><label style="font-size:11px;color:var(--ink-soft)">Fecha de entrega</label>
+            <input type="text" value="${p.fecha}" oninput="svArrObj('productos',${i},'fecha',this.value)" placeholder="Mes 6"></div>
+        </div>
+      </div>`).join('')}
+    <button class="btn btn-sm" onclick="state.data.productos.push({nombre:'',tipo:'',trl:'',ind:'',medver:'',fecha:''});scheduleSave();render()">+ Agregar producto</button>
+  </div>`;
+}
+
+// ── S8: Medios de verificación y supuestos ───────────────────
+function mmlLevelBlock(colorBar, bgColor, borderColor, labelBadge, labelText, fields) {
+  // fields: array of {id, label, placeholder, value, onInput, required}
+  const allFilled = fields.every(f => !f.required || f.value);
+  return `
+  <div style="border:1.5px solid ${borderColor};border-radius:10px;overflow:hidden;margin-bottom:14px">
+    <!-- header -->
+    <div style="background:${colorBar};padding:9px 14px;display:flex;align-items:center;gap:10px">
+      <div style="background:rgba(255,255,255,0.22);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase;white-space:nowrap">${labelBadge}</div>
+      <div style="color:#fff;font-size:13px;font-weight:500;flex:1;opacity:0.95">${labelText}</div>
+      <div style="color:rgba(255,255,255,0.8);font-size:18px">${allFilled ? '✓' : '○'}</div>
+    </div>
+    <!-- fields -->
+    <div style="padding:12px 14px;display:grid;grid-template-columns:repeat(${fields.length},1fr);gap:10px;background:${bgColor}">
+      ${fields.map(f=>`
+        <div>
+          <label style="font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px">${f.label}${f.required?'<span style="color:#dc2626;margin-left:2px">*</span>':''}</label>
+          <textarea rows="2" style="width:100%;background:#fff;border:1px solid ${f.value?'#d1d5db':'#fca5a5'};border-radius:8px;padding:7px 10px;font-family:var(--font-body);font-size:12px;color:var(--ink);resize:vertical;min-height:56px"
+            placeholder="${f.placeholder}"
+            oninput="${f.onInput}">${f.value||''}</textarea>
+          ${!f.value && f.required ? `<div style="font-size:10px;color:#dc2626;margin-top:2px">Campo requerido para completar la MML</div>` : ''}
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function renderS8() {
+  const d = state.data;
+  const resultadosLlenos = d.resultados.filter(r=>r);
+
+  // coherence checks for MML horizontal logic
+  const checks = {
+    fin:      !!(d.fin_indicador && d.fin_medver && d.fin_supuesto),
+    proposito:!!(d.iov_proposito.ind && d.medver_proposito && d.supuestos_proposito),
+    resultados: resultadosLlenos.length>0 && resultadosLlenos.every((_,i)=>
+      d.medver_resultados[i] && d.supuestos_resultados[i] &&
+      (d.iov_resultados[i]||{}).ind
+    )
+  };
+  const allOk = checks.fin && checks.proposito && checks.resultados;
+
+  return `
+  <div class="card">
+    <div class="card-title">Sección 6 — Matriz MML: Medios de verificación, indicadores y supuestos</div>
+    <div class="note">
+      <strong>Lógica horizontal de la MML:</strong> cada fila debe tener su indicador, medio de verificación y supuesto.<br>
+      • <strong>Indicador:</strong> parámetro cuantificable que permite verificar el logro.<br>
+      • <strong>Medio de verificación:</strong> fuente donde se obtienen los datos (registros, informes, estadísticas, actas).<br>
+      • <strong>Supuesto:</strong> factor externo no controlable por el proyecto, redactado en <strong>positivo</strong>.<br>
+      • <strong>Precondición:</strong> requisito previo influenciable para iniciar el proyecto.
+    </div>
+
+    ${resultadosLlenos.length === 0 ? '<div class="note danger">Define los resultados esperados en la Sesión 5 para habilitar los bloques de resultados.</div>' : ''}
+
+    <!-- ── NIVEL FIN ─────────────────────────────────────── -->
+    ${mmlLevelBlock(
+      '#1d4ed8','#eff6ff','#93c5fd',
+      'Nivel FIN',
+      d.obj_general ? d.obj_general.substring(0,80)+'…' : '(Objetivo general — definir en Sesión 6)',
+      [
+        {label:'Indicador del fin', placeholder:'Ej: Al final del proyecto, la tasa de desempleo juvenil en el municipio se reduce en al menos 5 pp', value:d.fin_indicador, required:true, onInput:"sv('fin_indicador',this.value)"},
+        {label:'Medio de verificación', placeholder:'Ej: Estadísticas DANE, informe de alcaldía municipal, encuesta de seguimiento', value:d.fin_medver, required:true, onInput:"sv('fin_medver',this.value)"},
+        {label:'Supuesto (en positivo)', placeholder:'Ej: Las políticas de empleo juvenil del municipio se mantienen activas durante el proyecto', value:d.fin_supuesto, required:true, onInput:"sv('fin_supuesto',this.value)"}
+      ]
+    )}
+
+    <!-- ── NIVEL PROPÓSITO ────────────────────────────────── -->
+    ${mmlLevelBlock(
+      '#0f766e','#f0fdfa','#5eead4',
+      'Nivel PROPÓSITO',
+      d.obj_especifico ? d.obj_especifico.substring(0,80)+'…' : '(Objetivo específico — definir en Sesión 5)',
+      [
+        {label:'Indicador del propósito', placeholder:'Ej: Al final del proyecto, al menos el 70% de los beneficiarios incrementa en un 30% su capacidad de monitoreo ambiental', value:d.iov_proposito.ind, required:true, onInput:"svNested('iov_proposito','ind',this.value)"},
+        {label:'Línea de base → Meta → Plazo', placeholder:'Base: 0 jóvenes capacitados → Meta: 21 de 30 → Plazo: mes 12', value:d.iov_proposito.base ? `Base: ${d.iov_proposito.base} → Meta: ${d.iov_proposito.meta} → Plazo: ${d.iov_proposito.plazo}` : '', required:false, onInput:''},
+        {label:'Medio de verificación', placeholder:'Ej: Listados de asistencia, registros de evaluación, informes técnicos del equipo', value:d.medver_proposito, required:true, onInput:"sv('medver_proposito',this.value)"},
+        {label:'Supuesto (en positivo)', placeholder:'Ej: Los beneficiarios aplican las capacidades adquiridas en sus actividades productivas y cotidianas', value:d.supuestos_proposito, required:true, onInput:"sv('supuestos_proposito',this.value)"}
+      ]
+    )}
+
+    <!-- ── NIVEL RESULTADOS ───────────────────────────────── -->
+    <div style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:3px 12px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Nivel RESULTADOS</div>
+        <span style="font-size:12px;color:var(--ink-soft)">${resultadosLlenos.length} resultado(s) definido(s) en Sesión 5 — se genera un bloque por cada uno</span>
+      </div>
+
+      ${resultadosLlenos.length === 0
+        ? `<div style="border:1.5px dashed var(--border);border-radius:10px;padding:20px;text-align:center;color:var(--ink-soft);font-size:13px">Los bloques aparecerán aquí una vez definas los resultados esperados en la Sesión 5</div>`
+        : resultadosLlenos.map((r,i) => {
+            const iov = d.iov_resultados[i] || {};
+            const mvR = d.medver_resultados[i] || '';
+            const supR = d.supuestos_resultados[i] || '';
+            const blockOk = !!(iov.ind && mvR && supR);
+            return `
+            <div style="border:1.5px solid ${blockOk?'#86efac':'#fca5a5'};border-radius:10px;overflow:hidden;margin-bottom:12px">
+              <!-- R header -->
+              <div style="background:${blockOk?'var(--green)':'#d97706'};padding:9px 14px;display:flex;align-items:center;gap:10px">
+                <div style="background:rgba(255,255,255,0.22);color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px">R${i+1}</div>
+                <div style="color:#fff;font-size:13px;font-weight:500;flex:1">${r}</div>
+                <div style="color:rgba(255,255,255,0.8);font-size:18px">${blockOk?'✓':'○'}</div>
+              </div>
+              <!-- 4 campos: indicador | base→meta→plazo | medio | supuesto -->
+              <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;background:${blockOk?'#f0fdf4':'#fffbeb'}">
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px">Indicador <span style="color:#dc2626">*</span></label>
+                  <textarea rows="3" style="width:100%;background:#fff;border:1px solid ${iov.ind?'#d1d5db':'#fca5a5'};border-radius:8px;padding:7px 10px;font-family:var(--font-body);font-size:12px;color:var(--ink);resize:vertical"
+                    placeholder="Ej: Al final del proyecto, R${i+1} alcanza al menos el 80% de avance verificable…"
+                    oninput="svNestedArr('iov_resultados',${i},'ind',this.value)">${iov.ind||''}</textarea>
+                </div>
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px">Línea base → Meta → Plazo</label>
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <input type="text" value="${iov.base||''}" oninput="svNestedArr('iov_resultados',${i},'base',this.value)"
+                      placeholder="Línea de base (situación inicial)"
+                      style="font-size:12px;border-radius:6px;border:1px solid var(--border);padding:5px 8px">
+                    <input type="text" value="${iov.meta||''}" oninput="svNestedArr('iov_resultados',${i},'meta',this.value)"
+                      placeholder="Meta (valor a alcanzar)"
+                      style="font-size:12px;border-radius:6px;border:1px solid var(--border);padding:5px 8px">
+                    <input type="text" value="${iov.plazo||''}" oninput="svNestedArr('iov_resultados',${i},'plazo',this.value)"
+                      placeholder="Plazo (ej: mes 6)"
+                      style="font-size:12px;border-radius:6px;border:1px solid var(--border);padding:5px 8px">
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px">Medio de verificación <span style="color:#dc2626">*</span></label>
+                  <textarea rows="3" style="width:100%;background:#fff;border:1px solid ${mvR?'#d1d5db':'#fca5a5'};border-radius:8px;padding:7px 10px;font-family:var(--font-body);font-size:12px;color:var(--ink);resize:vertical"
+                    placeholder="Ej: Acta de entrega, registro fotográfico, informe técnico parcial…"
+                    oninput="svArr('medver_resultados',${i},this.value)">${mvR}</textarea>
+                </div>
+                <div>
+                  <label style="font-size:11px;font-weight:600;color:#374151;text-transform:uppercase;letter-spacing:0.04em;display:block;margin-bottom:4px">Supuesto (positivo) <span style="color:#dc2626">*</span></label>
+                  <textarea rows="3" style="width:100%;background:#fff;border:1px solid ${supR?'#d1d5db':'#fca5a5'};border-radius:8px;padding:7px 10px;font-family:var(--font-body);font-size:12px;color:var(--ink);resize:vertical"
+                    placeholder="Ej: Las condiciones climáticas se mantienen dentro de rangos normales durante la ejecución…"
+                    oninput="svArr('supuestos_resultados',${i},this.value)">${supR}</textarea>
+                </div>
+              </div>
+              <!-- Conexión hacia arriba -->
+              <div style="background:${blockOk?'#dcfce7':'#fef3c7'};border-top:1px solid ${blockOk?'#86efac':'#fcd34d'};padding:6px 14px;font-size:11px;color:${blockOk?'#15803d':'#92400e'}">
+                ${blockOk
+                  ? `✓ R${i+1} verificable → contribuye al Objetivo específico`
+                  : `○ Completa indicador, medio de verificación y supuesto para R${i+1}`}
+              </div>
+            </div>`;
+          }).join('')
+      }
+    </div>
+
+    <!-- ── PRECONDICIONES ─────────────────────────────────── -->
+    <div style="border:1.5px solid #e9d5ff;border-radius:10px;overflow:hidden;margin-bottom:14px">
+      <div style="background:#7c3aed;padding:9px 14px;display:flex;align-items:center;gap:10px">
+        <div style="background:rgba(255,255,255,0.22);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:0.05em;text-transform:uppercase">Precondiciones</div>
+        <div style="color:rgba(255,255,255,0.85);font-size:12px">Requisitos previos influenciables para iniciar el proyecto</div>
+      </div>
+      <div style="padding:12px 14px;background:#faf5ff">
+        <textarea rows="3" style="width:100%;background:#fff;border:1px solid #d1d5db;border-radius:8px;padding:8px 10px;font-family:var(--font-body);font-size:13px;color:var(--ink);resize:vertical"
+          placeholder="Ej: El equipo cuenta con la convocatoria formalizada; los aliados han firmado cartas de compromiso; los beneficiarios han sido identificados y convocados a la primera sesión…"
+          oninput="sv('precondiciones',this.value)">${d.precondiciones||''}</textarea>
+      </div>
+    </div>
+
+    <!-- ── RESUMEN DE COHERENCIA HORIZONTAL ──────────────── -->
+    <div style="background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius);padding:14px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:10px">Verificación lógica horizontal de la MML</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${[
+          {label:'Fin — indicador + medio + supuesto', ok: checks.fin, detail: checks.fin ? 'Completo' : 'Faltan campos en el nivel Fin'},
+          {label:'Propósito — indicador + medio + supuesto', ok: checks.proposito, detail: checks.proposito ? 'Completo' : 'Faltan campos en el nivel Propósito'},
+          {label:`Resultados (${resultadosLlenos.length}) — indicadores + medios + supuestos`, ok: checks.resultados, detail: checks.resultados ? 'Todos los resultados tienen sus tres columnas' : 'Faltan campos en uno o más resultados'},
+        ].map(c=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:${c.ok?'#f0fdf4':'#fffbeb'};border-radius:8px;border:1px solid ${c.ok?'#86efac':'#fcd34d'}">
+            <div style="width:22px;height:22px;border-radius:50%;background:${c.ok?'#16a34a':'#f59e0b'};color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0">${c.ok?'✓':'!'}</div>
+            <div style="flex:1;font-size:12px"><strong>${c.label}</strong></div>
+            <div style="font-size:11px;color:${c.ok?'#15803d':'#92400e'}">${c.detail}</div>
+          </div>`).join('')}
+      </div>
+      ${allOk ? '<div class="note success" style="margin-top:12px">✓ Lógica horizontal verificada. La Matriz de Marco Lógico está completa.</div>' : ''}
+    </div>
+  </div>`;
+}
+
+// ── S9: Presupuesto SENA y riesgos ──────────────────────────
+const RUBROS_SENA = [
+  {id:'rh',  label:'Recurso humano',                      desc:'Contratación directa de personal exclusiva para actividades del proyecto', color:'#0f766e'},
+  {id:'mi',  label:'Materiales e insumos',                desc:'Reactivos, componentes, insumos para probar o ensamblar el prototipo', color:'#15803d'},
+  {id:'ca',  label:'Consultorías y asesorías',            desc:'Servicios profesionales especializados de universidades o expertos del sector', color:'#1d4ed8'},
+  {id:'maq', label:'Maquinaria y equipos',                desc:'Equipos y dispositivos de medición que aumenten la eficiencia del prototipo', color:'#7c3aed'},
+  {id:'tic', label:'TIC — Tecnologías de información',    desc:'Compra o alquiler de hardware, software y licencias (no incluye Office u otras licencias comunes)', color:'#0369a1'},
+  {id:'tt',  label:'Transferencia de tecnología',         desc:'Derechos de uso o licencias sobre tecnologías y patentes asociadas a la innovación', color:'#b45309'},
+  {id:'se',  label:'Servicios externos',                  desc:'Pruebas de laboratorio, simulaciones, modelados 3D, alquiler de espacios indispensables', color:'#be185d'},
+];
+const RIESGO_TIPOS = [
+  {id:'tec',label:'Técnico',color:'#1d4ed8'},
+  {id:'fin',label:'Financiero',color:'#d97706'},
+  {id:'adm',label:'Administrativo',color:'#16a34a'},
+  {id:'ext',label:'Externo',color:'#dc2626'},
+  {id:'leg',label:'Legal',color:'#7c3aed'},
+];
+const RIESGO_PROBS = ['Baja','Media','Alta'];
+const RIESGO_IMPS = ['Bajo','Medio','Alto'];
+// color matriz prob×impacto
+function riesgoColor(prob, imp) {
+  const p = RIESGO_PROBS.indexOf(prob), i = RIESGO_IMPS.indexOf(imp);
+  const m = [[' #d1fae5','#d1fae5','#fef3c7'],['#d1fae5','#fef3c7','#fee2e2'],['#fef3c7','#fee2e2','#fecaca']];
+  const t = [['Bajo · aceptar','Bajo · aceptar','Medio · vigilar'],['Bajo · aceptar','Medio · vigilar','Alto · contingencia'],['Medio · vigilar','Alto · mitigar','Prioridad máxima']];
+  return {bg: (m[i]||[])[p]||'#f9fafb', label: (t[i]||[])[p]||'Revisar'};
+}
+
+function renderS9() {
+  const d = state.data;
+  const resultadosLlenos = d.resultados.filter(r=>r);
+  // ensure presupuesto has rubro_id and actividad_ref fields
+  if(!d.presupuesto_v2) {
+    d.presupuesto_v2 = RUBROS_SENA.map(rb=>({
+      rubro_id: rb.id, items:[{desc:'',cant:'1',tiempo:'',unit:'',actividad:'',justificacion:''}]
+    }));
+  }
+  // ensure riesgos have new fields
+  d.riesgos.forEach(r=>{ if(!r.tipo_id) r.tipo_id='tec'; if(!r.estrategia) r.estrategia=''; if(!r.contingencia) r.contingencia=''; });
+
+  const totalGeneral = d.presupuesto_v2.reduce((sum,rb)=>
+    sum + rb.items.reduce((s,it)=> s + (parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0), 0), 0);
+
+  return `
+  <div class="card">
+    <div class="card-title">Sección 8 — Presupuesto por rubros SENA</div>
+    <div class="note">
+      <strong>Lógica del presupuesto:</strong> Objetivos → Actividades → Recursos. Cada ítem debe justificar por qué es necesario para alcanzar los objetivos de innovación.<br>
+      <strong>Costos NO financiables:</strong> honorarios a los jóvenes participantes, pago de deudas, arrendamiento de espacios no indispensables, adquisición de vehículos, papelería administrativa, proyectos llave en mano.
+    </div>
+
+    <!-- resumen por rubro -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:16px">
+      ${RUBROS_SENA.map(rb=>{
+        const rb_data = d.presupuesto_v2.find(r=>r.rubro_id===rb.id)||{items:[]};
+        const subtotal = rb_data.items.reduce((s,it)=>s+(parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0);
+        return `<div style="background:${subtotal?'#f0fdf4':'var(--bg)'};border:1px solid ${subtotal?'#86efac':'var(--border-light)'};border-radius:8px;padding:8px 10px">
+          <div style="font-size:10px;font-weight:600;color:${rb.color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px">${rb.label}</div>
+          <div style="font-size:15px;font-weight:600;color:var(--ink)">${subtotal>0?'$ '+Math.round(subtotal).toLocaleString('es-CO'):'Sin ítems'}</div>
+        </div>`;
+      }).join('')}
+      <div style="background:var(--green);border-radius:8px;padding:8px 10px">
+        <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:2px">TOTAL GENERAL</div>
+        <div style="font-size:15px;font-weight:700;color:#fff">$ ${Math.round(totalGeneral).toLocaleString('es-CO')}</div>
+      </div>
+    </div>
+
+    <!-- detalle por rubro -->
+    ${RUBROS_SENA.map((rb,ri)=>{
+      const rb_data = d.presupuesto_v2.find(r=>r.rubro_id===rb.id)||{rubro_id:rb.id,items:[{desc:'',cant:'1',tiempo:'',unit:'',actividad:'',justificacion:''}]};
+      const subtotal = rb_data.items.reduce((s,it)=>s+(parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0);
+      return `
+      <div style="border:1.5px solid ${subtotal?'#d1fae5':'var(--border-light)'};border-radius:10px;overflow:hidden;margin-bottom:12px">
+        <div style="background:${rb.color};padding:8px 14px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleRubro('${rb.id}')">
+          <div style="background:rgba(255,255,255,0.2);color:#fff;font-size:10px;font-weight:700;padding:2px 10px;border-radius:20px;text-transform:uppercase">${rb.label}</div>
+          <div style="color:rgba(255,255,255,0.85);font-size:12px;flex:1">${rb.desc}</div>
+          <div style="color:#fff;font-weight:600;font-size:13px">${subtotal>0?'$ '+Math.round(subtotal).toLocaleString('es-CO'):''}</div>
+          <div style="color:rgba(255,255,255,0.8);font-size:18px" id="rubro-arrow-${rb.id}">▾</div>
+        </div>
+        <div id="rubro-body-${rb.id}" style="padding:10px 14px;background:#fafafa">
+          <!-- tabla de ítems -->
+          <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:700px">
+            <tr style="background:var(--bg)">
+              <th style="padding:6px 8px;text-align:left;border:1px solid var(--border-light);font-size:10px;text-transform:uppercase;width:22%">Descripción del ítem</th>
+              <th style="padding:6px 8px;text-align:left;border:1px solid var(--border-light);font-size:10px;text-transform:uppercase;width:24%">Actividad asociada</th>
+              <th style="padding:6px 8px;text-align:center;border:1px solid var(--border-light);font-size:10px;width:7%">Cant.</th>
+              <th style="padding:6px 8px;text-align:center;border:1px solid var(--border-light);font-size:10px;width:7%">Meses</th>
+              <th style="padding:6px 8px;text-align:center;border:1px solid var(--border-light);font-size:10px;width:12%">V. unitario $</th>
+              <th style="padding:6px 8px;text-align:center;border:1px solid var(--border-light);font-size:10px;width:10%">Total $</th>
+              <th style="padding:6px 8px;text-align:left;border:1px solid var(--border-light);font-size:10px;width:18%">Justificación técnica</th>
+              <th style="width:24px;border:1px solid var(--border-light)"></th>
+            </tr>
+            ${rb_data.items.map((it,ii)=>{
+              const tot = Math.round((parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0));
+              return `<tr>
+                <td style="border:1px solid var(--border-light);padding:4px 6px"><input type="text" value="${(it.desc||'').replace(/"/g,'&quot;')}" oninput="svPresV2('${rb.id}',${ii},'desc',this.value)" placeholder="Ej: Sensor de humedad DHT22" style="font-size:12px;border:none;background:transparent;width:100%"></td>
+                <td style="border:1px solid var(--border-light);padding:4px 6px">
+                  <select onchange="svPresV2('${rb.id}',${ii},'actividad',this.value)" style="font-size:11px;border:none;background:transparent;width:100%">
+                    <option value="">— Actividad —</option>
+                    ${resultadosLlenos.flatMap((r,ri2)=>{
+                      const acts = (d.actividades_struct&&d.actividades_struct[ri2]||[]).filter(a=>a.texto);
+                      return acts.map((a,ai)=>`<option value="A${ri2+1}.${ai+1}" ${it.actividad===`A${ri2+1}.${ai+1}`?'selected':''}>A${ri2+1}.${ai+1}: ${a.texto.substring(0,35)}…</option>`);
+                    }).join('')}
+                  </select>
+                </td>
+                <td style="border:1px solid var(--border-light);padding:4px;text-align:center"><input type="number" value="${it.cant||1}" min="1" oninput="svPresV2('${rb.id}',${ii},'cant',this.value)" style="font-size:12px;border:none;background:transparent;width:50px;text-align:center"></td>
+                <td style="border:1px solid var(--border-light);padding:4px;text-align:center"><input type="number" value="${it.tiempo||''}" min="1" oninput="svPresV2('${rb.id}',${ii},'tiempo',this.value)" style="font-size:12px;border:none;background:transparent;width:50px;text-align:center"></td>
+                <td style="border:1px solid var(--border-light);padding:4px;text-align:center"><input type="number" value="${it.unit||''}" min="0" oninput="svPresV2('${rb.id}',${ii},'unit',this.value)" style="font-size:12px;border:none;background:transparent;width:90px;text-align:center"></td>
+                <td style="border:1px solid var(--border-light);padding:4px;text-align:center;font-weight:600;color:var(--green-mid)">$ ${tot>0?tot.toLocaleString('es-CO'):'—'}</td>
+                <td style="border:1px solid var(--border-light);padding:4px 6px"><input type="text" value="${(it.justificacion||'').replace(/"/g,'&quot;')}" oninput="svPresV2('${rb.id}',${ii},'justificacion',this.value)" placeholder="¿Por qué es necesario para el objetivo?" style="font-size:11px;border:none;background:transparent;width:100%"></td>
+                <td style="border:1px solid var(--border-light);padding:2px;text-align:center">
+                  ${rb_data.items.length>1?`<button onclick="rmPresV2('${rb.id}',${ii})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:16px;line-height:1">×</button>`:''}
+                </td>
+              </tr>`;
+            }).join('')}
+          </table>
+          </div>
+          <button class="btn btn-sm" style="margin-top:8px" onclick="addPresV2('${rb.id}')">+ Ítem en ${rb.label}</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>
+
+  <!-- MAPA DE RIESGOS -->
+  <div class="card">
+    <div class="card-title">Sección 10 — Gestión de riesgos</div>
+    <div class="note">
+      <strong>Riesgo =</strong> evento incierto que, si ocurre, afecta el proyecto.<br>
+      <strong>Estrategias:</strong> <span style="color:#16a34a">Mitigar</span> (reducir probabilidad o impacto) · <span style="color:#d97706">Contingencia</span> (plan B si ocurre) · <span style="color:#6b7280">Aceptar</span> (bajo impacto) · <span style="color:#1d4ed8">Vigilar</span> (monitorear).
+    </div>
+
+    <!-- Mapa prob×impacto -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--ink-soft);margin-bottom:8px">Mapa de calor — Probabilidad × Impacto</div>
+      <div style="display:grid;grid-template-columns:60px repeat(3,1fr);gap:3px;max-width:480px">
+        <div></div>
+        ${RIESGO_PROBS.map(p=>`<div style="text-align:center;font-size:11px;font-weight:600;color:var(--ink-soft);padding:4px">Prob. ${p}</div>`).join('')}
+        ${['Alto','Medio','Bajo'].map(imp=>`
+          <div style="font-size:10px;font-weight:600;color:var(--ink-soft);display:flex;align-items:center;writing-mode:horizontal-tb;white-space:nowrap">Imp. ${imp}</div>
+          ${RIESGO_PROBS.map(prob=>{
+            const cell = riesgoColor(prob, imp);
+            const matching = d.riesgos.filter(r=>r.prob===prob&&r.impacto===imp);
+            return `<div style="background:${cell.bg};border-radius:6px;padding:6px 8px;min-height:52px;border:1px solid rgba(0,0,0,0.06)">
+              <div style="font-size:10px;color:#6b7280;margin-bottom:3px">${cell.label}</div>
+              ${matching.map(r=>{
+                const tc = (RIESGO_TIPOS.find(t=>t.id===r.tipo_id)||{color:'#6b7280',label:r.tipo||'—'});
+                return `<div style="background:${tc.color};color:#fff;font-size:10px;padding:2px 6px;border-radius:10px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${r.desc?r.desc.substring(0,20)+'…':'Sin desc.'}</div>`;
+              }).join('')}
+            </div>`;
+          }).join('')}
+        `).join('')}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+        ${RIESGO_TIPOS.map(t=>`<div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:50%;background:${t.color}"></div><span style="font-size:11px;color:var(--ink-mid)">${t.label}</span></div>`).join('')}
+      </div>
+    </div>
+
+    <!-- listado de riesgos -->
+    ${d.riesgos.map((r,i)=>{
+      const cell = riesgoColor(r.prob, r.impacto);
+      const tc = RIESGO_TIPOS.find(t=>t.id===r.tipo_id)||RIESGO_TIPOS[0];
+      return `
+      <div style="border:1.5px solid ${r.desc?'#d1d5db':'var(--border-light)'};border-radius:10px;overflow:hidden;margin-bottom:10px">
+        <div style="background:${tc.color};padding:8px 14px;display:flex;align-items:center;gap:10px">
+          <select onchange="svArrObj('riesgos',${i},'tipo_id',this.value);render()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer">
+            ${RIESGO_TIPOS.map(t=>`<option value="${t.id}" ${r.tipo_id===t.id?'selected':''}>${t.label}</option>`).join('')}
+          </select>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+            <span style="color:rgba(255,255,255,0.8);font-size:11px">Prob:</span>
+            <select onchange="svArrObj('riesgos',${i},'prob',this.value);render()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:12px;cursor:pointer">
+              ${RIESGO_PROBS.map(p=>`<option ${r.prob===p?'selected':''}>${p}</option>`).join('')}
+            </select>
+            <span style="color:rgba(255,255,255,0.8);font-size:11px">Imp:</span>
+            <select onchange="svArrObj('riesgos',${i},'impacto',this.value);render()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:12px;cursor:pointer">
+              ${RIESGO_IMPS.map(p=>`<option ${r.impacto===p?'selected':''}>${p}</option>`).join('')}
+            </select>
+            <div style="background:${cell.bg};color:#374151;font-size:10px;font-weight:600;padding:2px 8px;border-radius:12px">${cell.label}</div>
+            <button onclick="state.data.riesgos.splice(${i},1);scheduleSave();render()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;cursor:pointer;font-size:16px;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center">×</button>
+          </div>
+        </div>
+        <div style="padding:10px 14px;display:grid;grid-template-columns:2fr 1.5fr 1.5fr;gap:10px;background:#fafafa">
+          <div>
+            <label style="font-size:10px;font-weight:600;text-transform:uppercase;color:#374151;display:block;margin-bottom:3px">Descripción del riesgo</label>
+            <textarea rows="2" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-family:var(--font-body);font-size:12px;resize:vertical"
+              placeholder="¿Qué evento incierto puede ocurrir?" oninput="svArrObj('riesgos',${i},'desc',this.value)">${r.desc||''}</textarea>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:600;text-transform:uppercase;color:#374151;display:block;margin-bottom:3px">Estrategia de mitigación</label>
+            <textarea rows="2" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-family:var(--font-body);font-size:12px;resize:vertical"
+              placeholder="¿Cómo reducir la probabilidad o el impacto?" oninput="svArrObj('riesgos',${i},'estrategia',this.value)">${r.estrategia||''}</textarea>
+          </div>
+          <div>
+            <label style="font-size:10px;font-weight:600;text-transform:uppercase;color:#374151;display:block;margin-bottom:3px">Plan de contingencia (si ocurre)</label>
+            <textarea rows="2" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-family:var(--font-body);font-size:12px;resize:vertical"
+              placeholder="Plan B: proveedor alterno, reprogramar, reasignar recursos…" oninput="svArrObj('riesgos',${i},'contingencia',this.value)">${r.contingencia||''}</textarea>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+    <button class="btn btn-sm" onclick="state.data.riesgos.push({tipo_id:'tec',desc:'',prob:'Media',impacto:'Medio',estrategia:'',contingencia:''});scheduleSave();render()">+ Agregar riesgo</button>
+  </div>`;
+}
+
+// ── S9 helpers ────────────────────────────────────────────────
+function svPresV2(rubroId, itemIdx, field, val) {
+  if(!Array.isArray(state.data.presupuesto_v2)) return;
+  const rb = state.data.presupuesto_v2.find(r=>r.rubro_id===rubroId);
+  if(rb && rb.items[itemIdx]) { rb.items[itemIdx][field]=val; scheduleSave(); render(); }
+}
+function addPresV2(rubroId) {
+  if(!Array.isArray(state.data.presupuesto_v2)) return;
+  const rb = state.data.presupuesto_v2.find(r=>r.rubro_id===rubroId);
+  if(rb) { rb.items.push({desc:'',cant:'1',tiempo:'',unit:'',actividad:'',justificacion:''}); scheduleSave(); render(); }
+}
+function rmPresV2(rubroId, itemIdx) {
+  if(!Array.isArray(state.data.presupuesto_v2)) return;
+  const rb = state.data.presupuesto_v2.find(r=>r.rubro_id===rubroId);
+  if(rb && rb.items.length>1) { rb.items.splice(itemIdx,1); scheduleSave(); render(); }
+}
+function toggleRubro(rubroId) {
+  const body = document.getElementById('rubro-body-'+rubroId);
+  const arrow = document.getElementById('rubro-arrow-'+rubroId);
+  if(body) { const hidden = body.style.display==='none'; body.style.display=hidden?'':'none'; if(arrow) arrow.textContent=hidden?'▾':'▸'; }
+}
+
+// ── S10: Sostenibilidad e impactos ─────────────────────────────
+function renderS10() {
+  const d = state.data;
+  return `
+
+  <div class="card">
+    <div class="card-title">Sección 11 — Sostenibilidad</div>
+    <div class="row3">
+      <div class="field"><label class="lbl">Sostenibilidad ambiental</label>
+        <textarea oninput="sv('sostenibilidad_ambiental',this.value)" placeholder="Uso eficiente de recursos, energías renovables, manejo de residuos, reducción de huella ambiental…">${d.sostenibilidad_ambiental}</textarea></div>
+      <div class="field"><label class="lbl">Sostenibilidad social</label>
+        <textarea oninput="sv('sostenibilidad_social',this.value)" placeholder="Capacitación comunitaria, apropiación del conocimiento, inclusión de jóvenes NINI, equidad de género…">${d.sostenibilidad_social}</textarea></div>
+      <div class="field"><label class="lbl">Capacidades y recursos</label>
+        <textarea oninput="sv('sostenibilidad_capacidades',this.value)" placeholder="Transferencia al aliado institucional, plan de mantenimiento, convenios con alcaldías o SENA…">${d.sostenibilidad_capacidades}</textarea></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Sección 12 — Impactos</div>
+    <div class="row2">
+      <div class="field"><label class="lbl">Impacto en la formación</label>
+        <textarea oninput="sv('impacto_formacion',this.value)" placeholder="Aprendices beneficiados, semilleros fortalecidos, competencias desarrolladas…">${d.impacto_formacion}</textarea></div>
+      <div class="field"><label class="lbl">Impacto social</label>
+        <textarea oninput="sv('impacto_social',this.value)" placeholder="Calidad de vida, empleabilidad, equidad de género, retención de jóvenes rurales…">${d.impacto_social}</textarea></div>
+      <div class="field"><label class="lbl">Impacto ambiental</label>
+        <textarea oninput="sv('impacto_ambiental',this.value)" placeholder="Reducción de huella ambiental, uso sostenible de recursos naturales del suroccidente…">${d.impacto_ambiental}</textarea></div>
+      <div class="field"><label class="lbl">Impacto tecnológico</label>
+        <textarea oninput="sv('impacto_tecnologico',this.value)" placeholder="Innovación en el territorio, adopción de tecnologías 4.0, transferencia tecnológica…">${d.impacto_tecnologico}</textarea></div>
+    </div>
+  </div>`;
+}
+
+// ── PDF Preview / Vista previa ───────────────────────────────
+function showPDFPreview() {
+  const d = state.data;
+  const linLabel = (LINEAS.find(l=>l.id===d.linea)||{}).label || '—';
+  const content = document.querySelector('.content');
+  if (!content) return;
+  content.innerHTML = `
+  <div class="content-inner">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div><h2 style="font-family:var(--font-display);color:var(--green);font-size:20px">Vista previa del proyecto</h2>
+      <p style="font-size:13px;color:var(--ink-soft)">Revise el documento completo antes de exportar</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="render()">← Volver a formular</button>
+        <button class="btn btn-gold" onclick="exportPDF()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+    <div id="pdf-content" style="background:#fff;padding:32px;border-radius:12px;border:1px solid var(--border-light)">
+      <!-- PORTADA -->
+      <div style="text-align:center;padding:40px 0 32px;border-bottom:2px solid var(--green);margin-bottom:28px">
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:12px">Jóvenes en Ciencia para la Paz – Capítulo Ipiales</div>
+        <h1 style="font-family:var(--font-display);font-size:26px;color:var(--green);margin-bottom:10px;line-height:1.3">${d.titulo||'[Nombre del proyecto]'}</h1>
+        <div style="font-size:14px;color:var(--ink-mid);margin-bottom:6px"><strong>Formuladores:</strong> ${[d.formulador1,d.formulador2,d.formulador3].filter(Boolean).join(' · ')||'—'}</div>
+        <div style="font-size:14px;color:var(--ink-mid);margin-bottom:6px"><strong>Municipios:</strong> ${d.municipios.join(', ')||'—'}</div>
+        <div style="font-size:13px;color:var(--ink-soft)"><strong>Duración:</strong> ${d.duracion||'—'} meses &nbsp;·&nbsp; <strong>Fecha:</strong> ${d.fecha}</div>
+        
+      </div>
+      <!-- S1 -->
+      <h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin-bottom:10px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">1. Identificación del proyecto</h3>
+      <table class="pdf-table">
+        <tr><td style="font-weight:600;width:35%">Línea temática</td><td>${linLabel}</td></tr>
+        <tr><td style="font-weight:600">Sublínea</td><td>${d.sublinea||'—'}</td></tr>
+        <tr><td style="font-weight:600">Beneficiarios directos</td><td>${d.beneficiarios_num||'—'} – ${d.beneficiarios_desc||'—'}</td></tr>
+        <tr><td style="font-weight:600">Palabras clave</td><td>${d.palabras||'—'}</td></tr>
+      </table>
+      <!-- S2 -->
+      ${d.resumen?`<h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin:20px 0 8px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">2. Resumen ejecutivo</h3><p style="font-size:13px;line-height:1.8;color:var(--ink)">${d.resumen}</p>`:''}
+      <!-- S3 -->
+      <h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin:20px 0 8px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">3. Árbol de problemas</h3>
+      <table class="pdf-table">
+        <tr><th style="background:#bfdbfe;color:#1e3a5f">Efectos indirectos</th></tr>
+        ${d.efectos_indirectos.filter(e=>e).map((e,i)=>`<tr><td style="background:#eff6ff">${i+1}. ${e}</td></tr>`).join('')}
+        <tr><th style="background:#93c5fd;color:#1e3a5f">Efectos directos</th></tr>
+        ${d.efectos_directos.filter(e=>e).map((e,i)=>`<tr><td style="background:#eff6ff">${i+1}. ${e}</td></tr>`).join('')}
+        <tr><th style="background:var(--green);color:#fff">Problema central</th></tr>
+        <tr><td style="background:#f0fdf4;font-weight:500">${d.problema||'—'}</td></tr>
+        <tr><th style="background:#fde68a;color:#78350f">Causas directas</th></tr>
+        ${d.causas_directas.filter(c=>c).map((c,i)=>`<tr><td style="background:#fffbeb">${i+1}. ${c}</td></tr>`).join('')}
+        <tr><th style="background:#fbbf24;color:#78350f">Causas indirectas</th></tr>
+        ${d.causas_indirectas.filter(c=>c).map((c,i)=>`<tr><td style="background:#fffbeb">${i+1}. ${c}</td></tr>`).join('')}
+      </table>
+      <!-- S4 -->
+      <h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin:20px 0 8px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">4. Árbol de objetivos</h3>
+      <table class="pdf-table">
+        <tr><th style="background:#bfdbfe;color:#1e3a5f">Fines indirectos</th></tr>
+        ${d.fines_indirectos.filter(f=>f).map((f,i)=>`<tr><td style="background:#eff6ff">${i+1}. ${f}</td></tr>`).join('')}
+        <tr><th style="background:#93c5fd;color:#1e3a5f">Fines directos</th></tr>
+        ${d.fines_directos.filter(f=>f).map((f,i)=>`<tr><td style="background:#eff6ff">${i+1}. ${f}</td></tr>`).join('')}
+        <tr><th style="background:var(--green);color:#fff">Objetivo central</th></tr>
+        <tr><td style="background:#f0fdf4;font-weight:500">${d.obj_central||'—'}</td></tr>
+        <tr><th style="background:#bbf7d0;color:#14532d">Medios directos (resultados esperados)</th></tr>
+        ${d.medios_directos.filter(m=>m).map((m,i)=>`<tr><td>${i+1}. ${m}</td></tr>`).join('')}
+      </table>
+      <!-- S5 -->
+      <h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin:20px 0 8px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">5. Objetivos y resultados esperados</h3>
+      <table class="pdf-table">
+        <tr><th>Objetivo general</th></tr><tr><td>${d.obj_general||'—'}</td></tr>
+        <tr><th>Objetivo específico</th></tr><tr><td>${d.obj_especifico||'—'}</td></tr>
+        ${d.resultados.filter(r=>r).map((r,i)=>`<tr><td><strong>R${i+1}:</strong> ${r}</td></tr>`).join('')}
+      </table>
+      <!-- S6: MML -->
+      <h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin:20px 0 8px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">6. Matriz de Marco Lógico</h3>
+      <div style="overflow-x:auto">
+      <table class="mml-table" style="font-size:11px">
+        <tr><th>Resumen narrativo</th><th>Indicadores verificables (IOV)</th><th>Medios de verificación</th><th>Supuestos</th></tr>
+        <tr class="row-fin"><td><span class="nivel-lbl">Fin</span>${d.obj_general||'—'}</td><td>${d.fin_indicador||'—'}</td><td>${d.fin_medver||'—'}</td><td>${d.fin_supuesto||'—'}</td></tr>
+        <tr class="row-proposito"><td><span class="nivel-lbl">Propósito</span>${d.obj_especifico||'—'}</td>
+          <td>${d.iov_proposito.ind||'—'}<br><small>Base: ${d.iov_proposito.base||'—'} · Meta: ${d.iov_proposito.meta||'—'} · Plazo: ${d.iov_proposito.plazo||'—'}</small></td>
+          <td>${d.medver_proposito||'—'}</td><td>${d.supuestos_proposito||'—'}</td></tr>
+        ${d.resultados.filter(r=>r).map((r,i)=>`
+        <tr class="row-resultado"><td><span class="nivel-lbl">R${i+1}</span>${r}</td>
+          <td>${(d.iov_resultados[i]||{}).ind||'—'}</td>
+          <td>${d.medver_resultados[i]||'—'}</td>
+          <td>${d.supuestos_resultados[i]||'—'}</td></tr>`).join('')}
+        <tr class="row-actividades"><td><span class="nivel-lbl">Actividades</span>${(Array.isArray(d.actividades_struct)?d.actividades_struct.flatMap((arr,i)=>(arr||[]).filter(a=>a.texto).map((a,j)=>`A${i+1}.${j+1}: ${a.texto}`)):Object.values(d.actividades||{}).filter(a=>a)).join('<br>')||'—'}</td>
+          <td colspan="2" style="font-size:10px;color:var(--ink-soft)">Los indicadores de actividad no se incluyen en la MML</td>
+          <td>—</td></tr>
+        <tr class="row-pre"><td colspan="4"><strong>Precondiciones:</strong> ${d.precondiciones||'—'}</td></tr>
+      </table>
+      </div>
+      <!-- S8: Presupuesto -->
+      ${d.presupuesto.some(r=>r.rubro)?`
+      <h3 style="font-family:var(--font-display);font-size:16px;color:var(--green);margin:20px 0 8px;border-bottom:1px solid #e8e8e0;padding-bottom:4px">8. Presupuesto</h3>
+      <table class="pdf-table">
+        <tr><th>Rubro</th><th>Cant.</th><th>Tiempo</th><th>Valor unit. ($)</th><th>Total ($)</th></tr>
+        ${d.presupuesto.filter(r=>r.rubro).map(r=>`<tr><td>${r.rubro}</td><td>${r.cant}</td><td>${r.tiempo}</td><td>${Number(r.unit||0).toLocaleString('es-CO')}</td><td style="font-weight:600">$ ${calcTotal(r)}</td></tr>`).join('')}
+      </table>`:'' }
+    </div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  loadFromLocalStorage();
+  render();
+  setTimeout(initGoogle, 500);
+});
+</script>
+</body>
+</html>
