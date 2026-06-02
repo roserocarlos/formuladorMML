@@ -525,26 +525,71 @@ function updateSaveStatus() {
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
-// ── Render debounce — only re-render 400ms after last keystroke ──
-let _renderTimer = null;
-function renderDebounced() {
-  clearTimeout(_renderTimer);
-  _renderTimer = setTimeout(() => render(), 400);
-}
-
-// ── Data setters — text inputs use renderDebounced, clicks use render() ──
+// ── Data setters — NEVER re-render on text input, only save data ──
+// render() is only called from buttons, chips, selects, session nav
 function sv(path, val) {
   const parts = path.split('.');
   let obj = state.data;
   for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
   obj[parts[parts.length - 1]] = val;
   scheduleSave();
-  renderDebounced();
+  patchLiveElements();
 }
-function svArr(key, idx, val) { state.data[key][idx] = val; scheduleSave(); renderDebounced(); }
-function svArrObj(key, idx, field, val) { if(state.data[key][idx]) state.data[key][idx][field] = val; scheduleSave(); renderDebounced(); }
-function svNested(key, field, val) { state.data[key][field] = val; scheduleSave(); renderDebounced(); }
-function svNestedArr(key, idx, field, val) { if(!state.data[key][idx]) state.data[key][idx]={}; state.data[key][idx][field]=val; scheduleSave(); renderDebounced(); }
+function svArr(key, idx, val) { state.data[key][idx] = val; scheduleSave(); patchLiveElements(); }
+function svArrObj(key, idx, field, val) { if(state.data[key][idx]) state.data[key][idx][field] = val; scheduleSave(); patchLiveElements(); }
+function svNested(key, field, val) { state.data[key][field] = val; scheduleSave(); patchLiveElements(); }
+function svNestedArr(key, idx, field, val) { if(!state.data[key][idx]) state.data[key][idx]={}; state.data[key][idx][field]=val; scheduleSave(); patchLiveElements(); }
+
+// ── Patch only live computed elements without touching inputs ──
+function patchLiveElements() {
+  const d = state.data;
+  // 1. Progress bar
+  const pf = document.querySelector('.progress-fill');
+  if (pf) pf.style.width = Math.round((state.completed.length/10)*100) + '%';
+  // 2. Budget totals (S9)
+  document.querySelectorAll('[data-total-rubro]').forEach(el => {
+    const rubroId = el.dataset.totalRubro;
+    const rb = (d.presupuesto_v2||[]).find(r=>r.rubro_id===rubroId);
+    if (rb) {
+      const sub = rb.items.reduce((s,it)=>s+(parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0);
+      el.textContent = sub > 0 ? '$ '+Math.round(sub).toLocaleString('es-CO') : '';
+    }
+  });
+  const totalEl = document.getElementById('presupuesto-total');
+  if (totalEl) {
+    const tot = (d.presupuesto_v2||[]).reduce((sum,rb)=>
+      sum+rb.items.reduce((s,it)=>s+(parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0),0);
+    totalEl.textContent = '$ '+Math.round(tot).toLocaleString('es-CO');
+  }
+  // 3. Verb validation for obj_especifico
+  const verbWarn = document.getElementById('verb-warn');
+  if (verbWarn) {
+    const firstWord = (d.obj_especifico||'').split(' ')[0].toLowerCase();
+    const bad = VERBOS_NO.includes(firstWord) && firstWord.length > 0;
+    verbWarn.style.display = bad ? '' : 'none';
+    if (bad) verbWarn.textContent = '⚠ El verbo "'+d.obj_especifico.split(' ')[0]+'" no es adecuado. Use: '+VERBOS_OK.join(', ')+'.';
+  }
+  // 4. Obj general "Contribuir" check
+  const ogWarn = document.getElementById('og-warn');
+  if (ogWarn) {
+    const bad = d.obj_general && !d.obj_general.toLowerCase().startsWith('contribuir');
+    ogWarn.style.display = bad ? '' : 'none';
+  }
+  // 5. Problem adjective check
+  const probOk = document.getElementById('prob-ok');
+  const probWarn = document.getElementById('prob-warn');
+  if (probOk && probWarn) {
+    const hasAdj = ADJETIVOS.some(a=>d.problema.toLowerCase().includes(a));
+    const noAus = !d.problema.toLowerCase().includes('falta de') && !d.problema.toLowerCase().includes('ausencia de');
+    const ok = hasAdj && noAus && d.problema.length > 10;
+    probOk.style.display = ok ? '' : 'none';
+    probWarn.style.display = (!ok && d.problema.length > 5) ? '' : 'none';
+    if (probWarn.style.display !== 'none') {
+      probWarn.textContent = (!hasAdj ? '⚠ Incluya un adjetivo negativo: '+ADJETIVOS.slice(0,5).join(', ')+'…' : '') +
+        (!noAus ? ' ⚠ Evite "falta de…"' : '');
+    }
+  }
+}
 function toggleMuni(m) {
   const idx = state.data.municipios.indexOf(m);
   if (idx > -1) state.data.municipios.splice(idx, 1); else state.data.municipios.push(m);
@@ -582,7 +627,7 @@ function svActStruct(ri, ai, val) {
   if(!Array.isArray(state.data.actividades_struct)) state.data.actividades_struct = [];
   if(!state.data.actividades_struct[ri]) state.data.actividades_struct[ri] = [{texto:""}];
   state.data.actividades_struct[ri][ai] = {texto: val};
-  scheduleSave(); renderDebounced();
+  scheduleSave(); patchLiveElements();
 }
 function addActStruct(ri) {
   if(!Array.isArray(state.data.actividades_struct)) state.data.actividades_struct = [];
@@ -632,26 +677,9 @@ async function exportPDF() {
 // RENDER
 // ─────────────────────────────────────────────────────────────
 function render() {
-  // Save focused element info before re-render
-  const focused = document.activeElement;
-  const focusedId = focused ? focused.id : null;
-  const focusedName = focused ? focused.name : null;
-  const selStart = focused && focused.selectionStart !== undefined ? focused.selectionStart : null;
-
   document.getElementById('root').innerHTML = state.loggedIn ? renderApp() : renderLogin();
   setTimeout(initGoogle, 100);
-
-  // Restore focus after render (prevents cursor jump)
-  if (focusedId || focusedName) {
-    const el = focusedId ? document.getElementById(focusedId) :
-               document.querySelector(`[name="${focusedName}"]`);
-    if (el) {
-      el.focus();
-      if (selStart !== null && el.setSelectionRange) {
-        try { el.setSelectionRange(selStart, selStart); } catch(e) {}
-      }
-    }
-  }
+  setTimeout(patchLiveElements, 0);
 }
 
 // ── Login ────────────────────────────────────────────────────
@@ -846,11 +874,8 @@ function renderS2() {
     <div class="field"><label class="lbl">Problema central <span>(una oración con 1-2 adjetivos de la lista)</span></label>
       <textarea rows="3" id="inp-problema" oninput="sv('problema',this.value)" placeholder="Ej: Limitado acceso de los jóvenes rurales del municipio de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas">${d.problema}</textarea>
     </div>
-    ${d.problema ? `
-    <div class="note ${hasAdj && noAusencia ? 'success' : 'warn'}">
-      ${hasAdj ? '✓ Contiene un adjetivo negativo adecuado.' : '⚠ Incluya un adjetivo como: ' + ADJETIVOS.slice(0,5).join(', ')}
-      ${noAusencia ? ' ✓ No está redactado como ausencia de solución.' : ' ⚠ Evite "falta de…" o "ausencia de…"'}
-    </div>` : ''}
+    <div id="prob-ok" class="note success" style="display:${(hasAdj && noAusencia && d.problema.length>10)?'':'none'}">✓ Problema bien redactado.</div>
+    <div id="prob-warn" class="note warn" style="display:${(!( hasAdj && noAusencia) && d.problema.length>5)?'':'none'}"></div>
     <div class="note" style="margin-top:12px">
       <strong>Verificación final (sesión 2):</strong><br>
       ☐ El problema contiene un adjetivo negativo<br>
@@ -1080,7 +1105,7 @@ function renderS5() {
     <div class="note"><strong>Verbos adecuados:</strong> ${VERBOS_OK.join(', ')}.<br><strong>Verbos no adecuados:</strong> ${VERBOS_NO.join(', ')}.<br>El objetivo específico es único y expresa el efecto concreto que logra el proyecto.</div>
     <div class="field"><label class="lbl">Objetivo específico</label>
       <textarea rows="3" id="inp-obj-esp" oninput="sv('obj_especifico',this.value)" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo e implementación de un prototipo IoT de bajo costo">${d.obj_especifico}</textarea>
-      ${badVerb ? `<div class="note danger" style="margin-top:6px">⚠ El verbo "${d.obj_especifico.split(' ')[0]}" no es adecuado. Use: ${VERBOS_OK.join(', ')}.</div>` : ''}
+      <div id="verb-warn" class="note danger" style="margin-top:6px;display:${badVerb?'':'none'}">⚠ El verbo "${d.obj_especifico.split(' ')[0]}" no es adecuado. Use: ${VERBOS_OK.join(', ')}.</div>
     </div>
   </div>
   <div class="card">
@@ -1133,7 +1158,7 @@ function renderS6() {
     </div>` : ''}
     <div class="field"><label class="lbl">Objetivo general</label>
       <textarea rows="3" id="inp-obj-gen" oninput="sv('obj_general',this.value)" placeholder="Contribuir a…">${d.obj_general}</textarea>
-      ${d.obj_general && !d.obj_general.toLowerCase().startsWith('contribuir') ? '<div class="note danger" style="margin-top:4px">⚠ El objetivo general debe comenzar con "Contribuir a…"</div>' : ''}
+      <div id="og-warn" class="note danger" style="margin-top:4px;display:${d.obj_general && !d.obj_general.toLowerCase().startsWith('contribuir')?'':'none'}">⚠ El objetivo general debe comenzar con "Contribuir a…"</div>
     </div>
   </div>
 
@@ -1558,12 +1583,12 @@ function renderS9() {
         const subtotal = rb_data.items.reduce((s,it)=>s+(parseFloat(it.cant)||1)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0);
         return `<div style="background:${subtotal?'#f0fdf4':'var(--bg)'};border:1px solid ${subtotal?'#86efac':'var(--border-light)'};border-radius:8px;padding:8px 10px">
           <div style="font-size:10px;font-weight:600;color:${rb.color};text-transform:uppercase;letter-spacing:0.04em;margin-bottom:2px">${rb.label}</div>
-          <div style="font-size:15px;font-weight:600;color:var(--ink)">${subtotal>0?'$ '+Math.round(subtotal).toLocaleString('es-CO'):'Sin ítems'}</div>
+          <div data-total-rubro="${rb.id}" style="font-size:15px;font-weight:600;color:var(--ink)">${subtotal>0?'$ '+Math.round(subtotal).toLocaleString('es-CO'):'Sin ítems'}</div>
         </div>`;
       }).join('')}
       <div style="background:var(--green);border-radius:8px;padding:8px 10px">
         <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.8);text-transform:uppercase;margin-bottom:2px">TOTAL GENERAL</div>
-        <div style="font-size:15px;font-weight:700;color:#fff">$ ${Math.round(totalGeneral).toLocaleString('es-CO')}</div>
+        <div id="presupuesto-total" style="font-size:15px;font-weight:700;color:#fff">$ ${Math.round(totalGeneral).toLocaleString('es-CO')}</div>
       </div>
     </div>
 
@@ -1708,7 +1733,7 @@ function renderS9() {
 function svPresV2(rubroId, itemIdx, field, val) {
   if(!Array.isArray(state.data.presupuesto_v2)) return;
   const rb = state.data.presupuesto_v2.find(r=>r.rubro_id===rubroId);
-  if(rb && rb.items[itemIdx]) { rb.items[itemIdx][field]=val; scheduleSave(); renderDebounced(); }
+  if(rb && rb.items[itemIdx]) { rb.items[itemIdx][field]=val; scheduleSave(); patchLiveElements(); }
 }
 function addPresV2(rubroId) {
   if(!Array.isArray(state.data.presupuesto_v2)) return;
