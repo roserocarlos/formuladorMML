@@ -406,13 +406,17 @@ function scheduleSave() {
 
 async function doSave() {
   const payload = JSON.stringify({ data: state.data, completed: state.completed, session: state.session, savedAt: new Date().toISOString() });
-  if (state.accessToken) {
-    await saveToDrive(payload);
-  } else {
-    saveToLocalStorage(payload);
-  }
-  // always keep localStorage as backup layer
+  // always save locally first — zero latency, zero failure
   saveToLocalStorage(payload);
+  // then try Drive if authenticated
+  if (state.accessToken && state.loggedIn) {
+    try {
+      await saveToDrive(payload);
+    } catch(e) {
+      console.warn('Drive save skipped:', e.message);
+      // localStorage already saved above — no data loss
+    }
+  }
   state.saveStatus = 'saved';
   updateSaveStatus();
 }
@@ -521,18 +525,26 @@ function updateSaveStatus() {
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
+// ── Render debounce — only re-render 400ms after last keystroke ──
+let _renderTimer = null;
+function renderDebounced() {
+  clearTimeout(_renderTimer);
+  _renderTimer = setTimeout(() => render(), 400);
+}
+
+// ── Data setters — text inputs use renderDebounced, clicks use render() ──
 function sv(path, val) {
   const parts = path.split('.');
   let obj = state.data;
   for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
   obj[parts[parts.length - 1]] = val;
   scheduleSave();
-  render();
+  renderDebounced();
 }
-function svArr(key, idx, val) { state.data[key][idx] = val; scheduleSave(); render(); }
-function svArrObj(key, idx, field, val) { if(state.data[key][idx]) state.data[key][idx][field] = val; scheduleSave(); render(); }
-function svNested(key, field, val) { state.data[key][field] = val; scheduleSave(); render(); }
-function svNestedArr(key, idx, field, val) { if(!state.data[key][idx]) state.data[key][idx]={}; state.data[key][idx][field]=val; scheduleSave(); render(); }
+function svArr(key, idx, val) { state.data[key][idx] = val; scheduleSave(); renderDebounced(); }
+function svArrObj(key, idx, field, val) { if(state.data[key][idx]) state.data[key][idx][field] = val; scheduleSave(); renderDebounced(); }
+function svNested(key, field, val) { state.data[key][field] = val; scheduleSave(); renderDebounced(); }
+function svNestedArr(key, idx, field, val) { if(!state.data[key][idx]) state.data[key][idx]={}; state.data[key][idx][field]=val; scheduleSave(); renderDebounced(); }
 function toggleMuni(m) {
   const idx = state.data.municipios.indexOf(m);
   if (idx > -1) state.data.municipios.splice(idx, 1); else state.data.municipios.push(m);
@@ -570,7 +582,7 @@ function svActStruct(ri, ai, val) {
   if(!Array.isArray(state.data.actividades_struct)) state.data.actividades_struct = [];
   if(!state.data.actividades_struct[ri]) state.data.actividades_struct[ri] = [{texto:""}];
   state.data.actividades_struct[ri][ai] = {texto: val};
-  scheduleSave(); render();
+  scheduleSave(); renderDebounced();
 }
 function addActStruct(ri) {
   if(!Array.isArray(state.data.actividades_struct)) state.data.actividades_struct = [];
@@ -620,9 +632,26 @@ async function exportPDF() {
 // RENDER
 // ─────────────────────────────────────────────────────────────
 function render() {
+  // Save focused element info before re-render
+  const focused = document.activeElement;
+  const focusedId = focused ? focused.id : null;
+  const focusedName = focused ? focused.name : null;
+  const selStart = focused && focused.selectionStart !== undefined ? focused.selectionStart : null;
+
   document.getElementById('root').innerHTML = state.loggedIn ? renderApp() : renderLogin();
-  // re-init google after first render
   setTimeout(initGoogle, 100);
+
+  // Restore focus after render (prevents cursor jump)
+  if (focusedId || focusedName) {
+    const el = focusedId ? document.getElementById(focusedId) :
+               document.querySelector(`[name="${focusedName}"]`);
+    if (el) {
+      el.focus();
+      if (selStart !== null && el.setSelectionRange) {
+        try { el.setSelectionRange(selStart, selStart); } catch(e) {}
+      }
+    }
+  }
 }
 
 // ── Login ────────────────────────────────────────────────────
@@ -760,7 +789,7 @@ function renderS1() {
     <div class="card-title">Sección 1 — Identificación del proyecto</div>
     <div class="note">Complete todos los campos. El nombre del proyecto debe tener máximo 20 palabras y expresar claramente la solución propuesta.</div>
     <div class="field"><label class="lbl">Nombre del proyecto <span>(máx. 20 palabras)</span></label>
-      <input type="text" value="${d.titulo}" oninput="sv('titulo',this.value)" placeholder="Ej: Sistema de monitoreo ambiental comunitario para fuentes hídricas de Cumbal mediante tecnologías IoT de bajo costo"></div>
+      <input type="text" value="${d.titulo}" id="inp-titulo" oninput="sv('titulo',this.value)" placeholder="Ej: Sistema de monitoreo ambiental comunitario para fuentes hídricas de Cumbal mediante tecnologías IoT de bajo costo"></div>
     <div class="row3">
       <div class="field"><label class="lbl">Formulador 1 <span>(nombre completo)</span></label>
         <input type="text" value="${d.formulador1||''}" oninput="sv('formulador1',this.value)" placeholder="Nombre completo"></div>
@@ -777,7 +806,7 @@ function renderS1() {
       </div>
     </div>
     <div class="field"><label class="lbl">Sublínea específica <span>(redactar según la convocatoria)</span></label>
-      <input type="text" value="${d.sublinea}" oninput="sv('sublinea',this.value)" placeholder="Ej: Agricultura de precisión y tecnologías para la producción sostenible"></div>
+      <input type="text" value="${d.sublinea}" id="inp-sublinea" oninput="sv('sublinea',this.value)" placeholder="Ej: Agricultura de precisión y tecnologías para la producción sostenible"></div>
     <div class="field"><label class="lbl">Municipios de ejecución <span>(suroccidente nariñense)</span></label>
       <div class="muni-grid">${MUNICIPIOS.map(m=>`<div class="muni-chip ${d.municipios.includes(m)?'sel':''}" onclick="toggleMuni('${m}')">${m}</div>`).join('')}</div>
       ${d.municipios.length>0?`<div class="tag-list" style="margin-top:8px">${d.municipios.map(m=>`<span class="tag">${m}</span>`).join('')}</div>`:''}
@@ -799,7 +828,7 @@ function renderS1() {
     <div class="card-title">Sección 2 — Resumen ejecutivo <span style="font-weight:400;text-transform:none">(inicio — completar al finalizar)</span></div>
     <div class="note"><strong>Ejercicio práctico sesión 1:</strong> Redacte una frase que vincule su iniciativa con las tres definiciones CTel y la apropiación social del conocimiento. Esta frase será la base del problema central en la sesión 2.</div>
     <div class="field"><label class="lbl">Frase CTel / base para el resumen <span>(máx. 500 palabras al final)</span></label>
-      <textarea rows="5" oninput="sv('resumen',this.value)" placeholder="Esta iniciativa aplica conocimiento científico sobre [tema] para desarrollar una tecnología de [tipo] que innova en [aspecto], transfiriendo el conocimiento a las comunidades del suroccidente nariñense mediante espacios de diálogo de saberes y co-creación…">${d.resumen}</textarea>
+      <textarea rows="5" id="inp-resumen" oninput="sv('resumen',this.value)" placeholder="Esta iniciativa aplica conocimiento científico sobre [tema] para desarrollar una tecnología de [tipo] que innova en [aspecto], transfiriendo el conocimiento a las comunidades del suroccidente nariñense mediante espacios de diálogo de saberes y co-creación…">${d.resumen}</textarea>
     </div>
   </div>`;
 }
@@ -815,7 +844,7 @@ function renderS2() {
     <div class="note"><strong>Definición Marco Lógico:</strong> El problema es una situación existente y negativa para los jóvenes del suroccidente nariñense. <strong>No es la ausencia de una solución</strong> (evitar "falta de…" o "ausencia de…").<br><br>
     <strong>Adjetivos recomendados:</strong> ${ADJETIVOS.join(' · ')}</div>
     <div class="field"><label class="lbl">Problema central <span>(una oración con 1-2 adjetivos de la lista)</span></label>
-      <textarea rows="3" oninput="sv('problema',this.value)" placeholder="Ej: Limitado acceso de los jóvenes rurales del municipio de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas">${d.problema}</textarea>
+      <textarea rows="3" id="inp-problema" oninput="sv('problema',this.value)" placeholder="Ej: Limitado acceso de los jóvenes rurales del municipio de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas">${d.problema}</textarea>
     </div>
     ${d.problema ? `
     <div class="note ${hasAdj && noAusencia ? 'success' : 'warn'}">
@@ -1050,7 +1079,7 @@ function renderS5() {
     <div class="card-title">Sección 5 — Objetivo específico (propósito)</div>
     <div class="note"><strong>Verbos adecuados:</strong> ${VERBOS_OK.join(', ')}.<br><strong>Verbos no adecuados:</strong> ${VERBOS_NO.join(', ')}.<br>El objetivo específico es único y expresa el efecto concreto que logra el proyecto.</div>
     <div class="field"><label class="lbl">Objetivo específico</label>
-      <textarea rows="3" oninput="sv('obj_especifico',this.value)" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo e implementación de un prototipo IoT de bajo costo">${d.obj_especifico}</textarea>
+      <textarea rows="3" id="inp-obj-esp" oninput="sv('obj_especifico',this.value)" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo e implementación de un prototipo IoT de bajo costo">${d.obj_especifico}</textarea>
       ${badVerb ? `<div class="note danger" style="margin-top:6px">⚠ El verbo "${d.obj_especifico.split(' ')[0]}" no es adecuado. Use: ${VERBOS_OK.join(', ')}.</div>` : ''}
     </div>
   </div>
@@ -1103,7 +1132,7 @@ function renderS6() {
       <button class="btn btn-sm" style="margin-top:6px" onclick="sv('obj_general','${autoOG.replace(/'/g,"\\'")}')">Usar</button>
     </div>` : ''}
     <div class="field"><label class="lbl">Objetivo general</label>
-      <textarea rows="3" oninput="sv('obj_general',this.value)" placeholder="Contribuir a…">${d.obj_general}</textarea>
+      <textarea rows="3" id="inp-obj-gen" oninput="sv('obj_general',this.value)" placeholder="Contribuir a…">${d.obj_general}</textarea>
       ${d.obj_general && !d.obj_general.toLowerCase().startsWith('contribuir') ? '<div class="note danger" style="margin-top:4px">⚠ El objetivo general debe comenzar con "Contribuir a…"</div>' : ''}
     </div>
   </div>
@@ -1679,7 +1708,7 @@ function renderS9() {
 function svPresV2(rubroId, itemIdx, field, val) {
   if(!Array.isArray(state.data.presupuesto_v2)) return;
   const rb = state.data.presupuesto_v2.find(r=>r.rubro_id===rubroId);
-  if(rb && rb.items[itemIdx]) { rb.items[itemIdx][field]=val; scheduleSave(); render(); }
+  if(rb && rb.items[itemIdx]) { rb.items[itemIdx][field]=val; scheduleSave(); renderDebounced(); }
 }
 function addPresV2(rubroId) {
   if(!Array.isArray(state.data.presupuesto_v2)) return;
