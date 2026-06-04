@@ -1980,6 +1980,63 @@ function showPDFPreview() {
 
 
 
+
+// ── Compartir archivo con el coordinador ─────────────────────
+async function shareDriveFile() {
+  if (!state.accessToken || !state.driveFileId) {
+    showToast('Primero inicia sesión con Google y completa al menos una sesión', 'error');
+    return;
+  }
+  try {
+    await fetch('https://www.googleapis.com/drive/v3/files/' + state.driveFileId + '/permissions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + state.accessToken, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: 'reader', type: 'anyone' })
+    });
+    const link = 'https://drive.google.com/file/d/' + state.driveFileId + '/view';
+    showShareModal(link);
+  } catch(e) {
+    showToast('Error al generar el link: ' + e.message, 'error');
+  }
+}
+
+function showShareModal(link) {
+  const existing = document.getElementById('share-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'share-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px';
+  const safeLink = link.replace(/'/g, "\'");
+  const waText = encodeURIComponent('Hola, te comparto mi formulario MML: ' + link);
+  modal.innerHTML = \`
+    <div style="background:#fff;border-radius:16px;padding:28px;max-width:480px;width:100%;box-shadow:0 24px 48px rgba(0,0,0,0.2)">
+      <div style="font-size:32px;text-align:center;margin-bottom:12px">🔗</div>
+      <h3 style="font-family:var(--font-display);font-size:18px;color:var(--green);text-align:center;margin-bottom:8px">Link de tu formulario</h3>
+      <p style="font-size:13px;color:var(--ink-soft);text-align:center;margin-bottom:16px;line-height:1.6">
+        Copia este link y envíalo al coordinador por WhatsApp o correo.<br>
+        Solo él podrá verlo — nadie más puede editarlo.
+      </p>
+      <div style="background:#f4faf7;border:1px solid #86efac;border-radius:8px;padding:10px 14px;margin-bottom:14px;word-break:break-all;font-size:12px;font-family:monospace;color:var(--ink)">\${link}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="navigator.clipboard.writeText('\${safeLink}').then(()=>showToast('Link copiado ✓','green'))"
+          style="flex:1;padding:10px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-body)">
+          📋 Copiar link
+        </button>
+        <button onclick="window.open('https://wa.me/?\${waText}','_blank')"
+          style="flex:1;padding:10px;background:#25D366;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-body)">
+          💬 WhatsApp
+        </button>
+      </div>
+      <button onclick="document.getElementById('share-modal').remove()"
+        style="width:100%;margin-top:8px;padding:9px;background:transparent;color:var(--ink-soft);border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;font-family:var(--font-body)">
+        Cerrar
+      </button>
+    </div>
+  \`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+}
+
 // ─────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────
