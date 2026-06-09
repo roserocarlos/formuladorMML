@@ -205,6 +205,95 @@ textarea{min-height:72px;line-height:1.6}
 
 /* ── Responsive ── */
 @media(max-width:900px){.body{grid-template-columns:0 1fr 0}.sidebar,.panel{display:none}}
+
+/* ── Mobile drawer ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--white);z-index:301;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:12px 0;box-shadow:4px 0 20px rgba(0,0,0,.15)}
+.drawer.open{transform:translateX(0)}
+.drawer-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;border:none;background:var(--bdr2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--ink2)}
+
+/* ── Bottom sheet (matrix on mobile) ── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
+.sheet-overlay.open{opacity:1;pointer-events:all}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:80vh;background:var(--white);z-index:301;border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:16px}
+.sheet.open{transform:translateY(0)}
+.sheet-handle{width:40px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 14px}
+
+/* ── Mobile fab buttons ── */
+.fab-row{position:fixed;bottom:20px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:200}
+.fab{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);font-size:20px;transition:transform .15s}
+.fab:hover{transform:scale(1.05)}
+.fab-main{background:var(--g1);color:#fff}
+.fab-secondary{background:var(--white);color:var(--g1);border:2px solid var(--g1)}
+@media(min-width:901px){.fab-row{display:none}}
+
+/* ── Hamburger ── */
+.hamburger{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:8px;border-radius:6px}
+.hamburger span{width:20px;height:2px;background:rgba(255,255,255,.9);border-radius:2px;display:block;transition:all .2s}
+@media(max-width:900px){.hamburger{display:flex}}
+
+/* ── Onboarding screen ── */
+.onboard{position:fixed;inset:0;background:var(--g1);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px}
+.onboard-card{background:var(--white);border-radius:20px;padding:36px 32px;max-width:440px;width:100%;text-align:center}
+.onboard-icon{font-size:48px;margin-bottom:16px}
+.onboard h1{font-family:var(--font-d);font-size:22px;color:var(--g1);margin-bottom:8px}
+.onboard p{font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:6px}
+.onboard-steps{text-align:left;margin:16px 0 24px;display:flex;flex-direction:column;gap:10px}
+.onboard-step{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--ink2)}
+.onboard-step-num{width:24px;height:24px;border-radius:50%;background:var(--g3);color:var(--g1);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.onboard-name{width:100%;font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);border:1.5px solid var(--bdr);border-radius:var(--r);padding:10px 13px;margin-bottom:10px;transition:border-color .15s}
+.onboard-name:focus{outline:none;border-color:var(--g2);background:var(--white)}
+.onboard-btn{width:100%;padding:12px;background:var(--g1);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
+.onboard-btn:hover{background:var(--g2)}
+
+/* ── Session completeness indicator ── */
+.completeness-bar{background:var(--bdr2);border-radius:var(--r);padding:12px 14px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.completeness-label{font-size:12px;color:var(--ink2)}
+.completeness-count{font-size:12px;font-weight:600}
+.completeness-count.full{color:var(--g1)}
+.completeness-count.partial{color:#d97706}
+.completeness-mini{height:4px;flex:1;background:var(--bdr);border-radius:4px;overflow:hidden}
+.completeness-mini-fill{height:100%;border-radius:4px;transition:width .3s}
+
+/* ── Improved tooltip button — larger touch target ── */
+.tip-btn{width:28px;height:28px;border-radius:50%;background:var(--b2);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;vertical-align:middle;touch-action:manipulation}
+.tip-btn:hover{background:var(--b1)}
+@media(max-width:900px){.tip-btn{width:36px;height:36px;font-size:13px}}
+
+/* ── Required field marker ── */
+.req{color:#dc2626;margin-left:2px}
+
+/* ── Font size fixes — min 12px for all functional text ── */
+.box-label{font-size:11px!important}
+.tree-level-label{font-size:11px!important}
+.act-code{font-size:12px!important}
+.nav-num{font-size:11px!important}
+.mml-lbl{font-size:10px!important}
+.prog-bar{margin-top:4px}
+
+/* ── Improved toast ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r);font-size:13px;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;max-width:320px;display:flex;align-items:center;gap:10px}
+.toast.show{opacity:1;transform:translateY(0);pointer-events:all}
+.toast.green{background:var(--g1)}
+.toast.err{background:#dc2626;pointer-events:all}
+.toast-close{background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0}
+
+/* ── Mobile layout improvements ── */
+@media(max-width:900px){
+  .body{grid-template-columns:1fr}
+  .topbar{padding:0 14px}
+  .topbar-brand{font-size:14px}
+  .topbar-right .btn{display:none}
+  .main{padding:14px}
+  .card{padding:14px}
+  .field-row.cols2,.field-row.cols3{grid-template-columns:1fr}
+  .tree-grid{grid-template-columns:1fr!important}
+  .tree-box textarea{min-height:54px}
+}
+
+/* ── Presupuesto first rubro auto-open indicator ── */
+.rubro-hint{font-size:11px;color:rgba(255,255,255,.7);margin-left:8px}
 </style>
 </head>
 <body>
@@ -422,6 +511,8 @@ const SESSIONS = [
 let S = {
   session: 1,
   completed: [],
+  _onboarded: false,
+  _userName: '',
   f1:'', f2:'', f3:'',
   titulo:'', linea:'', sublinea:'', municipios:[], duracion:'', palabras:'', resumen:'',
   problema:'',
@@ -457,6 +548,101 @@ let activeTip = null;
 // PERSISTENCE — localStorage + sessionStorage + IndexedDB
 // ═══════════════════════════════════════════════════════════════
 let dbReady = false, db = null;
+
+// ═══════════════════════════════════════════════════════════════
+// MOBILE UI — Drawer, Bottom Sheet, Onboarding
+// ═══════════════════════════════════════════════════════════════
+function openDrawer() {
+  document.getElementById('nav-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('nav-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+function openSheet() {
+  document.getElementById('matrix-sheet').classList.add('open');
+  document.getElementById('sheet-overlay').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('matrix-sheet').classList.remove('open');
+  document.getElementById('sheet-overlay').classList.remove('open');
+}
+
+function showOnboarding() {
+  const ob = document.getElementById('onboard-screen');
+  if(ob) ob.style.display='flex';
+}
+function finishOnboard() {
+  const name = (document.getElementById('onboard-name')||{}).value||'';
+  if(name.trim().length < 2) {
+    document.getElementById('onboard-name').style.borderColor='#dc2626';
+    return;
+  }
+  S._onboarded = true;
+  S._userName = name.trim();
+  if(!S.f1) S.f1 = name.trim();
+  scheduleSave();
+  const ob = document.getElementById('onboard-screen');
+  if(ob) { ob.style.opacity='0'; ob.style.transition='opacity .3s'; setTimeout(()=>ob.remove(),300); }
+}
+
+function buildDrawerHTML() {
+  return `
+  <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+  <div id="nav-drawer" class="drawer">
+    <button class="drawer-close" onclick="closeDrawer()">×</button>
+    <div style="padding:14px 14px 0;font-family:var(--font-d);font-size:15px;color:var(--g1);font-weight:700">Formulador MML</div>
+    <div style="font-size:11px;color:var(--ink3);padding:2px 14px 12px">${S._userName||'Jóvenes en Ciencia para la Paz'}</div>
+    <div class="prog-bar" style="margin:0 14px 4px"><div class="prog-fill" style="width:${Math.round(S.completed.length/10*100)}%"></div></div>
+    <div style="font-size:10px;color:var(--ink3);padding:0 14px 10px;text-align:right">${Math.round(S.completed.length/10*100)}% completado</div>
+    ${SESSIONS.map(s=>`<div class="nav-item${S.session===s.id?' active':''}${S.completed.includes(s.id)?' done':''}" onclick="goSession(${s.id});closeDrawer()">
+      <div class="nav-num">${S.completed.includes(s.id)?'✓':s.id}</div>
+      <div style="font-size:12px">${s.label}</div>
+    </div>`).join('')}
+    <div class="sidebar-divider"></div>
+    <button class="sidebar-btn" onclick="showPDFPreview();closeDrawer()">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Vista previa / PDF
+    </button>
+    <button class="sidebar-btn" onclick="exportJSON();closeDrawer()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar respaldo
+    </button>
+    <button class="sidebar-btn" onclick="importJSON();closeDrawer()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 5 17 10"/></svg>Importar respaldo
+    </button>
+  </div>`;
+}
+
+function buildSheetHTML() {
+  return `
+  <div id="sheet-overlay" class="sheet-overlay" onclick="closeSheet()"></div>
+  <div id="matrix-sheet" class="sheet">
+    <div class="sheet-handle"></div>
+    <div style="font-size:13px;font-weight:600;color:var(--g1);margin-bottom:12px">Matriz MML en vivo</div>
+    <div id="live-matrix-sheet">${buildMatrixPreview()}</div>
+  </div>`;
+}
+
+function buildOnboardHTML() {
+  if(S._onboarded) return '';
+  return `
+  <div id="onboard-screen" class="onboard">
+    <div class="onboard-card">
+      <div class="onboard-icon">🌿</div>
+      <h1>Formulador MML</h1>
+      <p><strong>Jóvenes en Ciencia para la Paz – Capítulo Ipiales</strong></p>
+      <p style="font-size:13px;color:var(--ink3);margin-top:4px">Esta herramienta te guía paso a paso para formular tu proyecto usando la Metodología de Marco Lógico (MML), con fuentes oficiales colombianas.</p>
+      <div class="onboard-steps">
+        <div class="onboard-step"><div class="onboard-step-num">1</div><div>Completa cada sesión en orden. El botón <strong>?</strong> te explica cada concepto con ejemplos reales.</div></div>
+        <div class="onboard-step"><div class="onboard-step-num">2</div><div>La <strong>Matriz MML</strong> se llena automáticamente mientras escribes — la ves en el panel derecho.</div></div>
+        <div class="onboard-step"><div class="onboard-step-num">3</div><div>Tu progreso se guarda automáticamente en este dispositivo. Usa <strong>Exportar respaldo</strong> para guardar una copia.</div></div>
+        <div class="onboard-step"><div class="onboard-step-num">4</div><div>Al finalizar, descarga el <strong>PDF</strong> del proyecto completo listo para entregar.</div></div>
+      </div>
+      <input type="text" id="onboard-name" class="onboard-name" placeholder="Tu nombre completo para identificar tu formulario" onkeydown="if(event.key==='Enter')finishOnboard()">
+      <button class="onboard-btn" onclick="finishOnboard()">Comenzar a formular →</button>
+    </div>
+  </div>`;
+}
 
 function initDB() {
   if (!window.indexedDB) return;
@@ -607,16 +793,100 @@ function calcRubroTotal(rb) {
 }
 function pct() { return Math.round(S.completed.length/10*100); }
 function resLlenos() { return (S.resultados||[]).filter(r=>r); }
-function showToast(msg, type='') {
+function showToast(msg, type='', persist=false) {
   const t = document.getElementById('toast');
-  t.textContent=msg; t.className='toast show'+(type==='green'?' green':'');
-  setTimeout(()=>t.className='toast',3000);
+  t.innerHTML = `<span style="flex:1">${msg}</span>`
+    + (type==='err' || persist ? `<button class="toast-close" onclick="document.getElementById('toast').className='toast'">×</button>` : '');
+  t.className = 'toast show' + (type==='green'?' green':'') + (type==='err'?' err':'');
+  if (!persist && type !== 'err') {
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.className='toast', type==='err'?6000:3000);
+  }
 }
 function goSession(id) { S.session=id; render(); window.scrollTo(0,0); }
+function sessionCompleteness() {
+  // Returns {filled, total, pct} for current session
+  const rl = resLlenos();
+  switch(S.session) {
+    case 1: {
+      const fields = [S.f1, S.titulo, S.linea, S.sublinea, S.duracion, S.municipios.length>0?'ok':''];
+      const filled = fields.filter(Boolean).length;
+      return {filled, total:fields.length, pct:Math.round(filled/fields.length*100)};
+    }
+    case 2: {
+      const ok = S.problema.length>15 && ADJETIVOS_NEG.some(a=>S.problema.toLowerCase().includes(a));
+      return {filled:ok?1:0, total:1, pct:ok?100:0};
+    }
+    case 3: {
+      const fields = [...S.efdir.filter(Boolean), ...S.cadir.filter(Boolean)];
+      const total = Math.max(S.efdir.length + S.cadir.length, 6);
+      return {filled:fields.length, total, pct:Math.round(fields.length/total*100)};
+    }
+    case 4: {
+      const filled = [S.obj_central, ...S.mdir.filter(Boolean)].filter(Boolean).length;
+      const total = Math.max(S.mdir.length+1, 4);
+      return {filled, total, pct:Math.round(filled/total*100)};
+    }
+    case 5: {
+      const filled = [S.obj_especifico, ...rl].filter(Boolean).length;
+      const total = 1 + Math.max(rl.length, 3);
+      return {filled, total, pct:Math.round(filled/total*100)};
+    }
+    case 6: {
+      const acts = (S.actividades_struct||[]).flatMap(a=>a||[]).filter(Boolean);
+      const filled = [S.obj_general, ...acts].filter(Boolean).length;
+      const total = 1 + rl.length * 2;
+      return {filled:Math.min(filled,total), total, pct:Math.round(Math.min(filled,total)/total*100)};
+    }
+    case 7: {
+      const propOk = S.iov_proposito.ind && S.iov_proposito.base && S.iov_proposito.meta && S.iov_proposito.plazo ? 1 : 0;
+      const resOk = rl.filter((_,i)=>{const v=S.iov_resultados[i]||{};return v.ind&&v.base&&v.meta&&v.plazo;}).length;
+      return {filled:propOk+resOk, total:1+rl.length, pct:Math.round((propOk+resOk)/(1+Math.max(rl.length,1))*100)};
+    }
+    case 8: {
+      const fields = [S.fin_mv,S.fin_sup,S.prop_mv,S.prop_sup,S.precondiciones];
+      const filled = fields.filter(Boolean).length;
+      return {filled, total:fields.length, pct:Math.round(filled/fields.length*100)};
+    }
+    case 9: {
+      const hasItems = (S.presupuesto_v2||[]).some(rb=>(rb.items||[]).some(it=>it.desc&&it.unit>0));
+      const hasRisk = S.riesgos.some(r=>r.desc&&r.mit);
+      return {filled:(hasItems?1:0)+(hasRisk?1:0), total:2, pct:Math.round(((hasItems?1:0)+(hasRisk?1:0))/2*100)};
+    }
+    case 10: {
+      const fields = [S.sos_amb,S.sos_soc,S.sos_cap,S.imp_form,S.imp_soc];
+      const filled = fields.filter(Boolean).length;
+      return {filled, total:fields.length, pct:Math.round(filled/fields.length*100)};
+    }
+    default: return {filled:0,total:1,pct:0};
+  }
+}
+
 function markDone() {
+  const {pct} = sessionCompleteness();
+  if(pct < 50) {
+    showToast(`Esta sesión está al ${pct}% — te recomendamos completar más campos antes de continuar.`, '', false);
+    if(!S.completed.includes(S.session)) {
+      // Allow but don't auto-advance
+      S.completed.push(S.session);
+      scheduleSave(); render();
+      return;
+    }
+  }
   if(!S.completed.includes(S.session)) S.completed.push(S.session);
   if(S.session<10) S.session++;
   scheduleSave(); render(); window.scrollTo(0,0);
+  showToast(`Sesión ${S.session-1} completada ✓`, 'green');
+}
+
+function completenessBar() {
+  const {filled, total, pct} = sessionCompleteness();
+  const color = pct>=80?'var(--g1)':pct>=50?'#d97706':'#dc2626';
+  return `<div class="completeness-bar">
+    <span class="completeness-label">Campos completados</span>
+    <div class="completeness-mini"><div class="completeness-mini-fill" style="width:${pct}%;background:${color}"></div></div>
+    <span class="completeness-count ${pct>=80?'full':'partial'}">${filled}/${total}</span>
+  </div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1176,54 +1446,108 @@ function renderSession() {
 function render() {
   const p = pct();
   const sess = SESSIONS[S.session-1];
+  const comp = sessionCompleteness();
+  const compColor = comp.pct>=80?'var(--g1)':comp.pct>=50?'#d97706':'#dc2626';
+  const btnLabel = S.completed.includes(S.session)
+    ? '✓ Completada — Siguiente →'
+    : (comp.pct<50 ? `Continuar (${comp.pct}% completo)` : 'Marcar completada y continuar →');
+  const btnStyle = comp.pct<50 && !S.completed.includes(S.session)
+    ? 'background:#d97706;border-color:#d97706;color:#fff'
+    : '';
+
   document.getElementById('root').innerHTML =
     '<div class="app">' +
+
+    // ── TOPBAR ──────────────────────────────────────────
     '<div class="topbar">' +
-    '<div class="topbar-brand">Formulador <em>MML</em> · Jóvenes en Ciencia para la Paz</div>' +
-    '<div class="topbar-right">'+
-    '<div class="save-pill"><div class="save-dot saved" id="save-dot"></div><span id="save-txt">Guardado</span></div>'+
-    '<button class="btn sm" onclick="exportJSON()" style="color:#a8d5b8;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:11px">Respaldo JSON</button>'+
-    '<button class="btn sm" onclick="importJSON()" style="color:#a8d5b8;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:11px">Importar</button>'+
+    '<div style="display:flex;align-items:center;gap:10px">' +
+    '<div class="hamburger" onclick="openDrawer()" aria-label="Abrir menú de navegación">' +
+    '<span></span><span></span><span></span></div>' +
+    '<div class="topbar-brand">Formulador <em>MML</em></div>' +
+    '</div>' +
+    '<div class="topbar-right">' +
+    '<div class="save-pill"><div class="save-dot saved" id="save-dot"></div><span id="save-txt">Guardado</span></div>' +
+    '<button class="btn sm" onclick="exportJSON()" style="color:#a8d5b8;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:11px" aria-label="Exportar respaldo JSON">Respaldo</button>' +
+    '<button class="btn sm" onclick="importJSON()" style="color:#a8d5b8;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:11px" aria-label="Importar respaldo JSON">Importar</button>' +
     '</div></div>' +
 
     '<div class="body">' +
-    // SIDEBAR
+
+    // ── SIDEBAR (desktop) ────────────────────────────────
     '<div class="sidebar">' +
     '<div class="sidebar-section">Progreso general</div>' +
-    '<div class="prog-bar"><div class="prog-fill" style="width:'+p+'%"></div></div>'+
-    '<div style="font-size:10px;color:var(--ink3);padding:0 14px 8px;text-align:right">'+p+'% completado</div>'+
-    '<div class="sidebar-section">Sesiones del taller</div>' +
-    SESSIONS.map(s=>'<div class="nav-item'+(S.session===s.id?' active':'')+(S.completed.includes(s.id)?' done':'')+'" onclick="goSession('+s.id+')">'+
-      '<div class="nav-num">'+(S.completed.includes(s.id)?'✓':s.id)+'</div>'+
-      '<div>'+s.label+'</div></div>').join('') +
+    '<div class="prog-bar"><div class="prog-fill" style="width:'+p+'%"></div></div>' +
+    '<div style="font-size:11px;color:var(--ink3);padding:0 14px 8px;text-align:right">'+p+'% completado</div>' +
+    '<div class="sidebar-section">Sesiones</div>' +
+    SESSIONS.map(s =>
+      '<div class="nav-item'+(S.session===s.id?' active':'')+(S.completed.includes(s.id)?' done':'')+'" onclick="goSession('+s.id+')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\')goSession('+s.id+')">' +
+      '<div class="nav-num" aria-hidden="true">'+(S.completed.includes(s.id)?'✓':s.id)+'</div>' +
+      '<div style="line-height:1.3">'+s.label+'</div></div>'
+    ).join('') +
     '<div class="sidebar-divider"></div>' +
-    '<button class="sidebar-btn" onclick="showPDFPreview()"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Vista previa / PDF</button>'+
-    '<button class="sidebar-btn" onclick="exportPDF()"><svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar PDF</button>'+
+    '<button class="sidebar-btn" onclick="showPDFPreview()" aria-label="Ver vista previa y descargar PDF">' +
+    '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Vista previa / PDF</button>' +
+    '<button class="sidebar-btn" onclick="exportPDF()" aria-label="Descargar PDF directamente">' +
+    '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Descargar PDF</button>' +
+    '<button class="sidebar-btn" onclick="exportJSON()">' +
+    '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar respaldo .json</button>' +
+    '<button class="sidebar-btn" onclick="importJSON()">' +
+    '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 5 17 10"/></svg>Importar respaldo .json</button>' +
     '</div>' +
 
-    // MAIN
+    // ── MAIN CONTENT ─────────────────────────────────────
     '<div class="main"><div class="main-inner">' +
     '<div class="session-header">' +
     '<span class="badge badge-s">Sesión '+S.session+' de 10</span>' +
-    '<span class="badge badge-sec">'+sess.label+'</span>'+
-    '<h2>'+sess.label+'</h2>' +
-    '<p>Complete todos los campos. Haga clic en <strong>?</strong> para ver la definición oficial y ejemplos de redacción.</p>' +
+    '<span class="badge badge-sec">'+sess.label+'</span>' +
+    '<h2 style="margin-top:6px">'+sess.label+'</h2>' +
+    '<p style="margin-top:4px">Complete los campos. El botón <strong style="background:var(--b2);color:#fff;border-radius:50%;display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;font-size:10px">?</strong> muestra la definición oficial y ejemplos de redacción.</p>' +
     '</div>' +
     renderSession() +
+    // Completeness bar
+    '<div class="completeness-bar" style="margin-top:12px">' +
+    '<span class="completeness-label">Campos de esta sesión</span>' +
+    '<div class="completeness-mini"><div class="completeness-mini-fill" style="width:'+comp.pct+'%;background:'+compColor+'"></div></div>' +
+    '<span class="completeness-count '+(comp.pct>=80?'full':'partial')+'">'+comp.filled+'/'+comp.total+'</span>' +
+    '</div>' +
+    // Nav buttons
     '<div class="nav-footer">' +
-    '<button class="btn" onclick="goSession('+Math.max(1,S.session-1)+')" '+(S.session===1?'disabled':'')+'>← Anterior</button>' +
-    '<button class="btn primary" onclick="markDone()">'+(S.completed.includes(S.session)?'✓ Completada — Siguiente →':'Marcar completada y continuar →')+'</button>' +
+    '<button class="btn" onclick="goSession('+Math.max(1,S.session-1)+')" '+(S.session===1?'disabled':'')+' aria-label="Sesión anterior">' +
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Anterior</button>' +
+    '<button class="btn primary" onclick="markDone()" style="'+btnStyle+'" aria-label="Marcar sesión como completada">'+btnLabel+'</button>' +
     '</div></div></div>' +
 
-    // RIGHT PANEL
+    // ── RIGHT PANEL (desktop) ────────────────────────────
     '<div class="panel">' +
-    '<div class="panel-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>Matriz MML en vivo</div>' +
+    '<div class="panel-title">' +
+    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>' +
+    'Matriz MML en vivo</div>' +
     '<div id="live-matrix">'+buildMatrixPreview()+'</div>' +
     '</div>' +
 
-    '</div></div>';
+    '</div></div>' + // close body + app
+
+    // ── MOBILE DRAWER ────────────────────────────────────
+    buildDrawerHTML() +
+
+    // ── MOBILE BOTTOM SHEET ──────────────────────────────
+    buildSheetHTML() +
+
+    // ── ONBOARDING ───────────────────────────────────────
+    buildOnboardHTML() +
+
+    // ── MOBILE FABs ──────────────────────────────────────
+    '<div class="fab-row">' +
+    '<button class="fab fab-secondary" onclick="openSheet()" aria-label="Ver matriz MML" title="Ver Matriz MML">📋</button>' +
+    '<button class="fab fab-secondary" onclick="openDrawer()" aria-label="Abrir menú" title="Menú de sesiones">☰</button>' +
+    '</div>';
 
   setTimeout(patchLive, 0);
+  // Sync mobile sheet matrix if open
+  setTimeout(() => {
+    const sm = document.getElementById('live-matrix-sheet');
+    if(sm) sm.innerHTML = buildMatrixPreview();
+  }, 0);
 }
 
 // ═══════════════════════════════════════════════════════════════
