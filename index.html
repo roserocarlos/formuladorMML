@@ -339,155 +339,155 @@ const SUSTANTIVOS_ACT = ['Construcción','Capacitación','Diseño','Implementaci
 const TIPS = {
   titulo: {
     label: 'Nombre del proyecto',
-    fuente: 'DNP – Manual MGA Web 2020, pág. 24; SENNOVA Guía de Formulación 2023',
-    def: 'El nombre identifica de forma concisa y precisa el objeto del proyecto. Según el DNP, debe expresar la solución propuesta (no el problema), ser claro para cualquier lector y no superar 20 palabras. El SENNA establece que debe reflejar el enfoque CTel.',
-    ok: '"Desarrollo e implementación de un sistema IoT de bajo costo para el monitoreo de calidad hídrica en comunidades rurales del municipio de Cumbal, Nariño"',
-    bad: '"Proyecto de agua" o "Mejorar el agua de Cumbal" — demasiado vago; no expresa solución ni alcance.',
-    check: '¿Incluye: qué se hace + para qué o para quién + dónde? ¿Tiene máximo 20 palabras?'
+    fuente: 'Manual MGA – DNP 2020, pág. 24 · Guía de Formulación SENNOVA 2023',
+    def: 'El nombre le dice a cualquier persona qué hace el proyecto sin necesidad de leerlo completo. Debe mencionar qué se hace, para quién y dónde. El DNP establece máximo 20 palabras y que debe expresar la solución — no el problema.',
+    ok: '"Desarrollo de un sistema IoT de bajo costo para monitoreo de calidad hídrica en comunidades rurales del municipio de Cumbal, Nariño"',
+    bad: '"Proyecto de agua" o "Mejorar el agua de Cumbal" — muy vago, no dice qué se hace ni cómo.',
+    check: '¿Dice qué se hace? ¿Para quién o para qué? ¿Dónde? ¿Tiene máximo 20 palabras?'
   },
   problema: {
     label: 'Problema central',
-    fuente: 'DNP – Metodología General Ajustada (MGA) 2020, Cap. 2; Acción Social – Guía MML 2007, pág. 18; U. Nacional – Guía de Marco Lógico 2019',
-    def: 'Según el DNP y la MGA, el problema central es una situación negativa existente y verificable que afecta a una población específica en un territorio. NO es la ausencia de una solución ("falta de…") sino la descripción de la condición negativa actual. Debe redactarse con adjetivos que califiquen la magnitud: reducido, limitado, deficiente, elevado, escaso, deteriorado.',
+    fuente: 'MGA – DNP 2020, Cap. 2 · Guía de Identificación y Formulación de Proyectos – Acción Social 2007, pág. 18',
+    def: 'El problema central describe una situación negativa que ya existe y afecta a la población. No es lo que falta ni lo que hay que comprar — es lo que está pasando hoy y está mal. Debe usar adjetivos que describan la magnitud: reducido, limitado, deficiente, elevado, escaso, deteriorado.',
     ok: '"Limitado acceso de los jóvenes rurales del municipio de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas"',
-    bad: '"Falta de tecnología para el agua" — describe ausencia de solución, no el problema existente.',
-    check: '¿Contiene un adjetivo negativo? ¿Describe situación actual (no ausencia de algo)? ¿Menciona población y territorio?'
+    bad: '"Falta de tecnología para el agua" — esto describe lo que no hay, no el problema que existe.',
+    check: '¿Tiene un adjetivo negativo? ¿Describe algo que ya está pasando (no algo que falta)? ¿Menciona a quién afecta y dónde?'
   },
   efecto_directo: {
     label: 'Efecto directo',
-    fuente: 'DNP – MGA 2020, Cap. 2; CEPAL – Marco Lógico 2005 (referencia MGA)',
-    def: 'Los efectos directos son las consecuencias inmediatas que produce el problema central sobre la población afectada. Según la MGA del DNP, se ubican un nivel arriba del problema en el árbol y responden a la pregunta: ¿qué pasa como consecuencia directa de este problema?',
+    fuente: 'MGA – DNP 2020, Cap. 2 · Manual de Formulación de Proyectos – CEPAL 2005',
+    def: 'Los efectos directos son las consecuencias inmediatas del problema — lo que pasa en la comunidad por culpa de ese problema. Van arriba del problema en el árbol y responden a la pregunta: ¿qué pasa como resultado de que este problema exista?',
     ok: '"Deterioro de la calidad de vida de las comunidades que dependen de fuentes hídricas contaminadas"',
-    bad: '"No hay tecnología" — esto es una causa, no un efecto.',
-    check: '¿Es consecuencia directa del problema central? ¿No es una causa disfrazada?'
+    bad: '"No hay tecnología" — eso es una causa del problema, no una consecuencia.',
+    check: '¿Es algo que ocurre por culpa del problema central? ¿No es una causa disfrazada de efecto?'
   },
   efecto_indirecto: {
     label: 'Efecto indirecto (2.° orden)',
-    fuente: 'DNP – MGA 2020; Acción Social – Guía MML 2007, pág. 20',
-    def: 'Son las consecuencias de los efectos directos — impactos de segundo nivel. Representan el daño acumulado de largo plazo que genera el problema si no se interviene. Según Acción Social, deben ser verificables y no especulativos.',
-    ok: '"Mayor vulnerabilidad económica y social de las familias rurales nariñenses por inseguridad alimentaria e hídrica"',
-    bad: '"El mundo se acaba" — no verificable, no específico al problema.',
-    check: '¿Es consecuencia de un efecto directo (no del problema directamente)? ¿Es verificable?'
+    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 20',
+    def: 'Son las consecuencias de los efectos directos — el daño que se acumula si el problema sigue sin resolverse. Representan el impacto de largo plazo. Deben ser situaciones verificables, no suposiciones.',
+    ok: '"Mayor vulnerabilidad económica de las familias rurales nariñenses por inseguridad alimentaria e hídrica"',
+    bad: '"Todo empeora" — no es específico ni verificable.',
+    check: '¿Es consecuencia de un efecto directo (no del problema directamente)? ¿Se puede verificar que está ocurriendo?'
   },
   causa_directa: {
     label: 'Causa directa',
-    fuente: 'DNP – MGA 2020, Cap. 2; MinCiencias – Bases para la formulación MML 2022',
-    def: 'Las causas directas son los factores inmediatos que generan el problema central. Según la MGA, se ubican un nivel debajo del problema y responden a ¿por qué existe este problema? IMPORTANTE: no deben redactarse como "falta de…" sino como condición negativa existente.',
+    fuente: 'MGA – DNP 2020, Cap. 2 · Bases para la formulación MML – MinCiencias 2022',
+    def: 'Las causas directas explican por qué existe el problema. Van debajo del problema en el árbol. Importante: no deben escribirse como "falta de algo" sino como una condición negativa que existe. La diferencia es sutil pero importante para los evaluadores.',
     ok: '"Escasa adopción de tecnologías de monitoreo ambiental en comunidades rurales nariñenses"',
-    bad: '"Falta de tecnología" — se debe expresar la condición, no la ausencia de solución.',
-    check: '¿Explica directamente por qué existe el problema? ¿Está redactada como condición negativa (no como ausencia)?'
+    bad: '"Falta de tecnología" — describe lo que no hay; debe describir la condición que existe.',
+    check: '¿Explica directamente por qué existe el problema? ¿Describe una condición que existe, no algo que falta?'
   },
   causa_indirecta: {
     label: 'Causa indirecta (2.° orden)',
-    fuente: 'DNP – MGA 2020; U. Nacional – Guía de Marco Lógico 2019, pág. 12',
-    def: 'Son los factores que generan las causas directas — raíces estructurales del problema. Según la U. Nacional, representan el nivel más profundo de análisis causal y son clave para definir intervenciones sostenibles.',
+    fuente: 'MGA – DNP 2020 · Guía de Marco Lógico – U. Nacional 2019, pág. 12',
+    def: 'Son las razones detrás de las causas directas — las raíces más profundas del problema. Identificarlas ayuda a diseñar intervenciones que generen cambios duraderos y no solo soluciones temporales.',
     ok: '"Reducida articulación entre el sistema educativo y las necesidades tecnológicas del sector rural nariñense"',
-    bad: '"Pobreza" — demasiado general; no evidencia relación directa con la causa de primer nivel.',
-    check: '¿Explica por qué existe la causa directa a la que está ligada? ¿Es específica al contexto?'
+    bad: '"Pobreza" — demasiado general; no muestra relación directa con la causa de primer nivel.',
+    check: '¿Explica por qué existe la causa directa a la que está ligada? ¿Es específica al contexto del proyecto?'
   },
   obj_central: {
     label: 'Objetivo central',
-    fuente: 'DNP – MGA 2020, Cap. 3; Acción Social – Guía MML 2007, pág. 25',
-    def: 'Es la transformación positiva del problema central. Según el DNP, se obtiene convirtiendo la situación negativa en una situación positiva deseada y alcanzable. Se redacta en infinitivo o como estado logrado. Es el núcleo del árbol de objetivos.',
+    fuente: 'MGA – DNP 2020, Cap. 3 · Guía MML – Acción Social 2007, pág. 25',
+    def: 'Es la imagen positiva del problema central — cómo se vería la situación si el problema se resolviera. Se construye tomando el problema central y convirtiéndolo en un estado positivo y alcanzable. No es una actividad sino un estado que se logra.',
     ok: '"Acceso mejorado de los jóvenes rurales de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas"',
-    bad: '"Comprar equipos de tecnología" — describe una actividad, no un estado positivo alcanzado.',
-    check: '¿Es la imagen positiva exacta del problema central? ¿Describe un estado logrado, no una actividad?'
+    bad: '"Comprar equipos de tecnología" — eso es una actividad, no el estado que se quiere alcanzar.',
+    check: '¿Es la imagen positiva exacta del problema central? ¿Describe un estado logrado, no algo que se va a hacer?'
   },
   obj_general: {
     label: 'Objetivo general (Fin)',
-    fuente: 'DNP – MGA 2020; SENNOVA Guía de Formulación 2023, pág. 15; MinCiencias MML 2022',
-    def: 'El objetivo general o FIN es el impacto de largo plazo al cual contribuye el proyecto, pero que no puede alcanzar por sí solo. Según el DNP y SENNOVA, siempre inicia con "Contribuir a…" porque el proyecto es un medio, no la causa única del cambio. Se toma del nivel superior del árbol de objetivos.',
-    ok: '"Contribuir al mejoramiento de las condiciones de vida y la seguridad ambiental de las comunidades rurales del suroccidente nariñense mediante el fortalecimiento de capacidades tecnológicas en jóvenes innovadores"',
-    bad: '"Mejorar la calidad del agua de Cumbal" — no inicia con "Contribuir a" y el proyecto solo no puede lograr esto.',
-    check: '¿Inicia con "Contribuir a…"? ¿Es de mayor alcance que el objetivo específico? ¿El proyecto contribuye pero no lo logra solo?'
+    fuente: 'MGA – DNP 2020 · Guía de Formulación SENNOVA 2023, pág. 15 · Bases MML – MinCiencias 2022',
+    def: 'El objetivo general es el cambio grande al que el proyecto aporta, pero que no puede lograr solo. Siempre empieza con "Contribuir a…" porque el proyecto es solo una pieza — el cambio completo requiere más actores y más tiempo. Se toma del nivel más alto del árbol de objetivos.',
+    ok: '"Contribuir al mejoramiento de las condiciones de vida y la seguridad ambiental de las comunidades rurales del suroccidente nariñense mediante el fortalecimiento de capacidades tecnológicas en jóvenes"',
+    bad: '"Mejorar la calidad del agua de Cumbal" — el proyecto solo no puede garantizar esto; además no empieza con "Contribuir a".',
+    check: '¿Empieza con "Contribuir a…"? ¿Es más amplio que el objetivo específico? ¿El proyecto aporta pero no lo logra solo?'
   },
   obj_especifico: {
     label: 'Objetivo específico (Propósito)',
-    fuente: 'DNP – MGA 2020, Cap. 3; Acción Social – Guía MML 2007, pág. 28; SENNOVA 2023',
-    def: 'El objetivo específico o PROPÓSITO es el cambio concreto que el proyecto SÍ puede lograr al finalizar. Según la MGA es único, medible y alcanzable con los recursos del proyecto. Verbos adecuados: mejorar, aumentar, reducir, fortalecer, desarrollar, implementar. Verbos NO adecuados: apoyar, fomentar, impulsar, promover (son vagos e imposibles de medir).',
-    ok: '"Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo e implementación de un sistema IoT de bajo costo"',
-    bad: '"Apoyar a los jóvenes en tecnología" — verbo inadecuado, no es medible ni específico.',
-    check: '¿Inicia con verbo adecuado? ¿Es único? ¿Incluye: qué + cuánto + quién + dónde?'
+    fuente: 'MGA – DNP 2020, Cap. 3 · Guía MML – Acción Social 2007, pág. 28 · SENNOVA 2023',
+    def: 'El objetivo específico es el cambio concreto que el proyecto sí puede lograr al terminar. Es único — un solo proyecto tiene un solo objetivo específico. Debe poder medirse: al final del proyecto se puede decir con datos si se logró o no. Los verbos que no sirven son los que no se pueden medir: apoyar, fomentar, promover.',
+    ok: '"Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo de un sistema IoT de bajo costo"',
+    bad: '"Apoyar a los jóvenes en tecnología" — no se puede medir, no dice cuánto ni cómo.',
+    check: '¿Empieza con verbo que se puede medir? ¿Es solo uno? ¿Dice cuántos, quiénes y dónde?'
   },
   resultado: {
     label: 'Resultado esperado (Componente)',
-    fuente: 'DNP – MGA 2020, Cap. 3; Acción Social – Guía MML 2007, pág. 30; MinCiencias MML 2022',
-    def: 'Los resultados esperados o COMPONENTES son los productos concretos que entrega el proyecto y que son necesarios y suficientes para lograr el objetivo específico. Según la MGA, son cambios o estados alcanzados (no actividades). Se expresan como participios: "Diseñado", "Implementado", "Capacitado". Cada uno debe tener indicador verificable.',
-    ok: '"Sistema IoT de monitoreo hídrico diseñado, ensamblado y validado técnicamente" o "30 jóvenes rurales capacitados en uso y mantenimiento del sistema de monitoreo"',
-    bad: '"Hacer talleres de capacitación" — describe una actividad, no un resultado o estado alcanzado.',
-    check: '¿Es un estado alcanzado (participio)? ¿Es necesario y suficiente para lograr el objetivo? ¿Se puede verificar?'
+    fuente: 'MGA – DNP 2020, Cap. 3 · Guía MML – Acción Social 2007, pág. 30 · MinCiencias 2022',
+    def: 'Los resultados son los productos concretos que entrega el proyecto. Son los logros necesarios para alcanzar el objetivo específico — si los tienes todos, el objetivo se logra. Se escriben como algo terminado, con participios: diseñado, implementado, capacitado, validado. No son tareas sino entregas.',
+    ok: '"Sistema IoT de monitoreo hídrico diseñado, ensamblado y validado" · "30 jóvenes rurales capacitados en uso y mantenimiento del sistema"',
+    bad: '"Hacer talleres de capacitación" — eso es una actividad, no un resultado logrado.',
+    check: '¿Está escrito como algo terminado (participio)? ¿Si se logran todos los resultados, se cumple el objetivo? ¿Se puede verificar?'
   },
   actividad: {
     label: 'Actividad',
-    fuente: 'DNP – MGA 2020; Acción Social – Guía MML 2007, pág. 32; SENNOVA 2023',
-    def: 'Las actividades son las acciones concretas que produce cada resultado esperado. Según la MGA y Acción Social, se redactan con sustantivos de acción (no verbos en infinitivo): Construcción, Capacitación, Diseño, Implementación, Elaboración, Distribución, Sistematización, Socialización. Cada actividad debe estar asociada a un único resultado.',
-    ok: '"Diseño y elaboración del prototipo de sensor IoT para monitoreo de turbidez y pH en fuentes hídricas" (sustantivo de acción + descripción específica)',
-    bad: '"Hacer reuniones" o "Comprar cosas" — demasiado vago; no permite verificar el avance.',
-    check: '¿Inicia con sustantivo de acción? ¿Está claramente asociada a un resultado? ¿Permite verificar si se realizó?'
+    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 32 · SENNOVA 2023',
+    def: 'Las actividades son las tareas concretas que producen cada resultado. Se escriben con sustantivos de acción — no con verbos en infinitivo. La diferencia: "Capacitación de 30 jóvenes" (correcto) vs "Capacitar a los jóvenes" (incorrecto para la MML). Cada actividad pertenece a un solo resultado.',
+    ok: '"Diseño y elaboración del prototipo de sensor IoT para monitoreo de turbidez y pH"',
+    bad: '"Hacer reuniones" o "Comprar cosas" — demasiado vago; no permite verificar si se realizó.',
+    check: '¿Empieza con sustantivo de acción? ¿Está claramente amarrada a un resultado? ¿Se puede verificar que se hizo?'
   },
   indicador: {
     label: 'Indicador objetivamente verificable (IOV)',
-    fuente: 'DNP – MGA 2020; CEPAL – Marco Lógico 2005; Acción Social – Guía MML 2007, pág. 35; MinCiencias MML 2022',
-    def: 'Según la MGA y el Manual CEPAL, un IOV debe ser: VÁLIDO (mide lo que debe medir), VERIFICABLE (con fuente de datos real), PRECISO (cantidad + calidad + tiempo + grupo meta). La fórmula base es: "Al finalizar el proyecto, [cantidad] de [grupo] [cambio medible] respecto a [línea base]".',
-    ok: '"Al finalizar el proyecto (mes 12), al menos 25 de 30 jóvenes beneficiarios (83%) demuestran competencia en el uso del sistema IoT mediante prueba práctica estandarizada, partiendo de 0 usuarios capacitados"',
-    bad: '"Los jóvenes aprenden tecnología" — no cuantifica, no tiene plazo ni fuente de verificación.',
-    check: '¿Incluye: cantidad + porcentaje + grupo + período + línea base + meta? ¿Existe fuente real para medirlo?'
+    fuente: 'MGA – DNP 2020 · Manual Marco Lógico – CEPAL 2005 · Guía MML – Acción Social 2007, pág. 35',
+    def: 'El indicador le permite a cualquier evaluador —sin conocer el proyecto— verificar si se cumplió el objetivo o el resultado. Debe tener cuatro elementos: cuántos (número o porcentaje), quiénes (grupo beneficiario), cuándo (plazo) y desde dónde se parte (línea de base). Sin estos cuatro elementos no es un indicador válido.',
+    ok: '"Al mes 12, al menos 25 de los 30 jóvenes beneficiarios demuestran competencia en el uso del sistema IoT mediante prueba práctica, partiendo de 0 usuarios capacitados al inicio"',
+    bad: '"Los jóvenes aprenden tecnología" — no tiene número, plazo ni fuente de verificación.',
+    check: '¿Tiene: número o porcentaje + grupo + plazo + línea de base? ¿Existe una fuente real para medirlo?'
   },
   medver: {
     label: 'Medio de verificación',
-    fuente: 'DNP – MGA 2020; Acción Social – Guía MML 2007, pág. 37; SENNOVA 2023',
-    def: 'Es la fuente de información que permite comprobar el cumplimiento del indicador. Según Acción Social, debe ser: PERTINENTE (contiene la información del indicador), CONFIABLE (fuente rigurosa) y ACCESIBLE (se puede obtener en la práctica). No son documentos que el proyecto produce — son fuentes externas o registros verificables.',
-    ok: '"Acta de evaluación práctica firmada por instructor certificado; registro fotográfico con fecha; lista de asistencia con número de documento"',
-    bad: '"Informe del proyecto" — circular: el proyecto no puede ser su propio verificador.',
-    check: '¿La fuente existe independientemente del proyecto? ¿Permite a un evaluador externo verificar el indicador sin depender del equipo?'
+    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 37 · SENNOVA 2023',
+    def: 'Es el documento, registro o fuente donde cualquier persona puede comprobar que el indicador se cumplió. Debe existir independientemente del proyecto — el equipo no puede ser el único que diga que se logró. Ejemplos válidos: actas firmadas, registros fotográficos con fecha, listas de asistencia, informes de laboratorio.',
+    ok: '"Acta de evaluación práctica firmada por instructor certificado · Registro fotográfico con fecha · Lista de asistencia con número de documento"',
+    bad: '"Informe del equipo del proyecto" — el proyecto no puede ser su propio verificador.',
+    check: '¿La fuente existe por fuera del proyecto? ¿Un evaluador externo puede consultarla sin depender del equipo?'
   },
   supuesto: {
     label: 'Supuesto (factor externo)',
-    fuente: 'DNP – MGA 2020; Acción Social – Guía MML 2007, pág. 39; U. Nacional – Guía MML 2019',
-    def: 'Los supuestos son factores externos fuera del control del proyecto que deben cumplirse para que la lógica del MML funcione. Según Acción Social, se formulan en POSITIVO (condición deseable, no riesgo). Son diferentes de los riesgos: el supuesto dice qué debe pasar, el riesgo dice qué puede fallar.',
-    ok: '"Las condiciones climáticas en el municipio de Cumbal se mantienen dentro de rangos normales durante el período de implementación" o "Las instituciones aliadas mantienen su compromiso de cooperación"',
-    bad: '"Si no llueve mucho" — formulado en negativo; debe expresarse como condición positiva.',
-    check: '¿Está formulado en positivo? ¿Es externo al proyecto (no depende del equipo)? ¿Es realista y verificable?'
+    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 39 · Guía MML – U. Nacional 2019',
+    def: 'Los supuestos son condiciones que el proyecto necesita que se cumplan pero que no puede controlar. Se escriben en positivo — como algo que debe suceder, no como un riesgo. Por ejemplo, si el proyecto depende del clima o de decisiones de otras entidades, eso es un supuesto.',
+    ok: '"Las condiciones climáticas en Cumbal se mantienen dentro de rangos normales durante el proyecto" · "Las instituciones aliadas mantienen su compromiso durante la ejecución"',
+    bad: '"Si no llueve demasiado" — debe estar en positivo, como condición deseable.',
+    check: '¿Está escrito en positivo? ¿Es algo externo al proyecto? ¿Es realista que ocurra?'
   },
   precondicion: {
     label: 'Precondición',
-    fuente: 'Acción Social – Guía MML 2007, pág. 40; DNP – MGA 2020',
-    def: 'Las precondiciones son requisitos previos que deben existir ANTES de iniciar el proyecto. A diferencia de los supuestos (que aplican durante la ejecución), las precondiciones son condiciones de arranque que el equipo puede influenciar parcialmente. Según Acción Social, sin precondiciones cumplidas el proyecto no puede iniciar.',
-    ok: '"El equipo de jóvenes ha sido seleccionado y cuenta con carta de compromiso firmada; la entidad aliada ha confirmado el espacio para los talleres; los recursos han sido formalizados mediante acto administrativo"',
-    bad: '"Tener ganas de trabajar" — no verificable ni específico.',
-    check: '¿Son condiciones verificables antes de la fecha de inicio? ¿El equipo puede influir en su cumplimiento?'
+    fuente: 'Guía MML – Acción Social 2007, pág. 40 · MGA – DNP 2020',
+    def: 'Son los requisitos que deben estar listos antes de que el proyecto arranque. Sin estas condiciones no se puede empezar. A diferencia de los supuestos —que aplican durante la ejecución— las precondiciones son el punto de partida y el equipo puede influir en que se cumplan.',
+    ok: '"El equipo de jóvenes ha sido seleccionado y cuenta con carta de compromiso firmada · El espacio para los talleres ha sido confirmado por la institución aliada · Los recursos han sido formalizados"',
+    bad: '"Tener ganas de trabajar" — no es verificable ni específico.',
+    check: '¿Son condiciones que se pueden verificar antes de iniciar? ¿El equipo puede ayudar a que se cumplan?'
   },
   iov_linea_base: {
     label: 'Línea de base',
-    fuente: 'DNP – MGA 2020; BPIN Manual del Usuario 2022; MinCiencias MML 2022',
-    def: 'La línea de base es el valor del indicador en el momento CERO del proyecto (antes de intervenir). Según el BPIN y la MGA, sin línea de base no es posible demostrar el cambio generado. Puede ser 0 cuando no existe el servicio, o un valor medido mediante diagnóstico inicial.',
-    ok: '"0 jóvenes del municipio capacitados en sistemas IoT de monitoreo ambiental (diagnóstico enero 2026)" o "8% de las fuentes hídricas monitoreadas (IDEAM, 2025)"',
-    bad: '"Muy pocos" o "casi ninguno" — no cuantificado, no verificable.',
-    check: '¿Es un valor numérico concreto? ¿Tiene fecha y fuente? ¿Fue medido antes de iniciar?'
+    fuente: 'MGA – DNP 2020 · Manual del Usuario BPIN 2022 · Bases MML – MinCiencias 2022',
+    def: 'La línea de base es el punto de partida — cómo está la situación antes de que el proyecto intervenga. Sin este dato no se puede demostrar que el proyecto generó un cambio. Puede ser cero si el servicio no existe, o un valor medido en el diagnóstico inicial.',
+    ok: '"0 jóvenes del municipio capacitados en sistemas IoT de monitoreo ambiental (diagnóstico enero 2026)" · "8% de las fuentes hídricas con monitoreo activo (IDEAM 2025)"',
+    bad: '"Muy pocos" o "casi ninguno" — no es un número concreto, no se puede comparar después.',
+    check: '¿Es un número concreto? ¿Tiene fecha y fuente? ¿Se midió antes de iniciar el proyecto?'
   },
   riesgo: {
     label: 'Riesgo',
-    fuente: 'DNP – MGA 2020, Cap. 5; SENNOVA Guía de Formulación 2023; MinCiencias MML 2022',
-    def: 'Un riesgo es un evento incierto que, si ocurre, puede afectar el logro de los objetivos del proyecto. Según la MGA, se clasifican por probabilidad (alta/media/baja) e impacto (alto/medio/bajo). Para cada riesgo se define una estrategia: mitigar (reducir prob. o impacto), contingencia (plan B), aceptar o vigilar.',
-    ok: '"Riesgo técnico: el prototipo IoT no alcanza el nivel de precisión requerido en condiciones de campo (Prob: Media, Impacto: Alto). Mitigación: pruebas de laboratorio con protocolo escalonado en los meses 2-4."',
-    bad: '"Puede que no funcione" — no clasificado, sin estrategia de respuesta.',
-    check: '¿Tiene tipo, probabilidad, impacto y estrategia de respuesta? ¿Es específico y verificable?'
+    fuente: 'MGA – DNP 2020, Cap. 5 · Guía de Formulación SENNOVA 2023 · Bases MML – MinCiencias 2022',
+    def: 'Un riesgo es algo que podría ocurrir y afectar el proyecto — no es seguro que pase, pero hay que estar preparado. Se clasifican por qué tan probable es que ocurra y qué tan grave sería si ocurre. Para cada riesgo se define cómo reducirlo (mitigación) y qué hacer si de todas formas ocurre (plan de contingencia).',
+    ok: '"Riesgo técnico: el prototipo no alcanza la precisión requerida en campo (Prob: Media, Impacto: Alto). Mitigación: pruebas de laboratorio con protocolo escalonado en los meses 2-4. Contingencia: ajuste de sensores con asesoría técnica especializada"',
+    bad: '"Puede que no funcione" — no tiene tipo, probabilidad, impacto ni plan de respuesta.',
+    check: '¿Tiene tipo, probabilidad e impacto definidos? ¿Hay estrategia de mitigación Y plan de contingencia?'
   },
   sostenibilidad: {
     label: 'Sostenibilidad',
-    fuente: 'DNP – MGA 2020, Cap. 6; SENNOVA 2023; Política Nacional de CTel 2022',
-    def: 'La sostenibilidad describe cómo los beneficios del proyecto continuarán después de terminar el financiamiento. Según la MGA incluye tres dimensiones: AMBIENTAL (uso eficiente de recursos, sin impacto negativo), SOCIAL (apropiación comunitaria, capacidad instalada) y FINANCIERA/INSTITUCIONAL (quién continúa operando y con qué recursos).',
-    ok: '"El sistema IoT será transferido al acueducto comunitario de Cumbal. Los jóvenes capacitados asumirán el mantenimiento. La alcaldía ha comprometido partida presupuestal para insumos anuales (Acta de compromiso adjunta)"',
-    bad: '"El proyecto es sostenible porque es bueno" — no demuestra mecanismos concretos de continuidad.',
-    check: '¿Identifica quién opera el proyecto después? ¿Hay recursos para continuar? ¿La comunidad tiene capacidad instalada?'
+    fuente: 'MGA – DNP 2020, Cap. 6 · SENNOVA 2023 · Política Nacional de CTel 2022',
+    def: 'La sostenibilidad explica qué pasa con los beneficios del proyecto cuando se acaba el recurso. Hay tres preguntas clave: ¿quién sigue operando el proyecto?, ¿con qué dinero?, y ¿la comunidad tiene la capacidad para mantenerlo? Sin respuestas concretas a estas preguntas, el proyecto muere cuando se acaba la plata.',
+    ok: '"El sistema IoT será transferido al acueducto comunitario de Cumbal. Los 30 jóvenes capacitados asumirán el mantenimiento. La alcaldía comprometió partida presupuestal para insumos anuales (Acta de compromiso adjunta)"',
+    bad: '"El proyecto es sostenible porque beneficia a la comunidad" — no muestra quién lo mantiene ni con qué recursos.',
+    check: '¿Dice quién opera después de terminar? ¿Hay recursos para continuar? ¿La comunidad tiene capacidad instalada?'
   },
   producto_minci: {
     label: 'Producto según tipología MinCiencias',
-    fuente: 'MinCiencias – Modelo de medición de grupos 2022; SENNOVA Manual de Productos 2023',
-    def: 'MinCiencias clasifica los productos de proyectos CTel en categorías: A) Generación de nuevo conocimiento (artículos, patentes), B) Desarrollo tecnológico e innovación (prototipos, software, manuales técnicos), C) Apropiación social (eventos, materiales divulgativos), D) Formación (trabajos de grado, capacitaciones). TRL (Technology Readiness Level): 1=principio básico, 4=validado en lab, 7=demostrado en campo, 9=sistema probado.',
-    ok: '"Prototipo funcional de sistema IoT (Tipo B – TRL 4): sensor de turbidez y pH con transmisión LoRa validado en laboratorio"',
-    bad: '"Un sistema de monitoreo" — sin tipología, sin TRL, sin descripción técnica.',
-    check: '¿Está clasificado en la tipología MinCiencias? ¿Tiene TRL asignado y justificado? ¿El medio de verificación es objetivable?'
+    fuente: 'MinCiencias – Modelo de medición de grupos 2022 · Manual de Productos SENNOVA 2023',
+    def: 'MinCiencias clasifica los productos según su tipo: A) nuevo conocimiento (artículos, patentes), B) desarrollo tecnológico (prototipos, software, manuales técnicos), C) apropiación social (eventos, material divulgativo), D) formación (capacitaciones, trabajos de grado). El TRL indica qué tan avanzado está el desarrollo: TRL 1 es una idea, TRL 4 es validado en laboratorio, TRL 7 es probado en campo.',
+    ok: '"Prototipo funcional de sistema IoT (Tipo B – TRL 4): sensor de turbidez y pH con transmisión LoRa, validado en condiciones de laboratorio"',
+    bad: '"Un sistema de monitoreo" — sin tipo, sin TRL, sin descripción técnica que permita evaluarlo.',
+    check: '¿Está clasificado en la tipología MinCiencias? ¿Tiene TRL justificado? ¿El medio de verificación permite comprobarlo?'
   }
 };
 
@@ -631,11 +631,11 @@ function buildOnboardHTML() {
       <div class="onboard-icon">🌿</div>
       <h1>Formulador MML</h1>
       <p><strong>Jóvenes en Ciencia para la Paz – Capítulo Ipiales</strong></p>
-      <p style="font-size:13px;color:var(--ink3);margin-top:4px">Esta herramienta te guía paso a paso para formular tu proyecto usando la Metodología de Marco Lógico (MML), con fuentes oficiales colombianas.</p>
+      <p style="font-size:13px;color:var(--ink3);margin-top:4px">Herramienta para formular tu proyecto de innovación usando Marco Lógico (MML).</p>
       <div class="onboard-steps">
-        <div class="onboard-step"><div class="onboard-step-num">1</div><div>Completa cada sesión en orden. El botón <strong>?</strong> te explica cada concepto con ejemplos reales.</div></div>
+        <div class="onboard-step"><div class="onboard-step-num">1</div><div>Completa las sesiones en orden. El botón <strong>?</strong> te muestra la definición y un ejemplo de cómo redactar correctamente.</div></div>
         <div class="onboard-step"><div class="onboard-step-num">2</div><div>La <strong>Matriz MML</strong> se llena automáticamente mientras escribes — la ves en el panel derecho.</div></div>
-        <div class="onboard-step"><div class="onboard-step-num">3</div><div>Tu progreso se guarda automáticamente en este dispositivo. Usa <strong>Exportar respaldo</strong> para guardar una copia.</div></div>
+        <div class="onboard-step"><div class="onboard-step-num">3</div><div>Tu avance se guarda solo en este dispositivo. Si vas a seguir desde otro equipo, usa <strong>Exportar respaldo</strong> para guardar una copia y llevarla contigo.</div></div>
         <div class="onboard-step"><div class="onboard-step-num">4</div><div>Al finalizar, descarga el <strong>PDF</strong> del proyecto completo listo para entregar.</div></div>
       </div>
       <input type="text" id="onboard-name" class="onboard-name" placeholder="Tu nombre completo para identificar tu formulario" onkeydown="if(event.key==='Enter')finishOnboard()">
@@ -1013,8 +1013,8 @@ function renderS1() {
     )
     + field('Municipios de ejecución (suroccidente nariñense)', `<div class="muni-grid">${muniGrid}</div>`)
   ) + card('Resumen ejecutivo',
-    '<div class="note info">Completar al finalizar todas las sesiones. Máx. 500 palabras: problema, solución, enfoque CTel, apropiación social y principales resultados.</div>'
-    + field('Resumen / Frase CTel inicial', `<textarea id="inp-res" oninput="S.resumen=this.value;scheduleSave();patchLive()" placeholder="Esta iniciativa aplica conocimiento científico sobre [tema] para desarrollar una tecnología de [tipo]…">${esc(S.resumen)}</textarea>`)
+    '<div class="note info">Escribe esto al final, cuando ya tengas todo el proyecto formulado. En máximo 500 palabras explica: qué problema resuelves, cómo lo resuelves, qué va a cambiar en el territorio y cuáles son los resultados concretos.</div>'
+    + field('Resumen / Frase CTel inicial', `<textarea id="inp-res" oninput="S.resumen=this.value;scheduleSave();patchLive()" placeholder="Describe en pocas palabras qué problema resuelve tu proyecto, cómo lo resuelves y qué va a cambiar en el territorio cuando termine…">${esc(S.resumen)}</textarea>`)
   );
 }
 
@@ -1028,7 +1028,7 @@ function renderS2() {
       : `<div class="val-err">${hasAdj?'':'⚠ Incluya un adjetivo negativo. '}${!noAus?'⚠ Evite "falta de…"':''} <button class="btn sm" onclick="showTip('problema')">Ver guía</button></div>`)
     : '';
   return card('Formulación del problema central',
-    `<div class="note info"><strong>Definición (MGA-DNP 2020):</strong> Situación negativa existente que afecta a la población. NO es la ausencia de solución. Use adjetivos: <em>${ADJETIVOS_NEG.slice(0,6).join(', ')}…</em></div>`
+    `<div class="note info">El problema debe describir una situación negativa que ya existe — no lo que falta o lo que hay que hacer. Use adjetivos que describan la magnitud: <em>${ADJETIVOS_NEG.slice(0,6).join(', ')}…</em></div>`
     + field('Problema central', tipBtn('problema')
       + `<textarea id="inp-prob" oninput="S.problema=this.value;scheduleSave();patchLive()" placeholder="Ej: Limitado acceso de los jóvenes rurales de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas">${esc(S.problema)}</textarea>`
       + valHtml,
@@ -1046,7 +1046,7 @@ function renderS3() {
   }
   const NCD = S.cadir.length;
   return card('Árbol de problemas',
-    '<div class="note info">Lógica causal (MGA-DNP 2020): causas debajo → problema al centro → efectos arriba. Ninguna causa debe redactarse como "falta de…"</div>'
+    '<div class="note info">Abajo van las causas (¿por qué ocurre el problema?), en el centro el problema, arriba los efectos (¿qué pasa por ese problema?). Ninguna causa debe decir "falta de…"</div>'
     + '<div class="tree-wrap">'
     + `<div class="tree-level-label" style="background:#1e3a5f;color:#fff">Efectos 2.° orden ${tipBtn('efecto_indirecto')}</div>`
     + treeGrid(S.efind,'efind','lvl-fi2','Efecto ind.')
@@ -1083,7 +1083,7 @@ function renderS4() {
     ? `<div class="note ok">Sugerencia automática: <em>${auto}</em> <button class="btn sm" onclick="S.obj_central=${JSON.stringify(auto)};scheduleSave();render()">Usar</button></div>` : '';
   return card(`Árbol de objetivos ${tipBtn('obj_central')}`,
     autoHtml
-    + '<div class="note info">Transformación positiva del árbol de problemas (MGA-DNP). Causas → Medios. Efectos → Fines.</div>'
+    + '<div class="note info">Convierte cada elemento del árbol de problemas en su versión positiva: las causas se vuelven medios para lograr el objetivo, y los efectos se vuelven los fines que se quieren alcanzar.</div>'
     + '<div class="tree-wrap">'
     + '<div class="tree-level-label" style="background:#1e3a5f;color:#fff">Fines 2.° orden</div>'
     + `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(S.find_.length,1)},1fr)">`
@@ -1118,13 +1118,13 @@ function renderS5() {
   const fw = (S.obj_especifico||'').split(' ')[0].toLowerCase();
   const badVerb = fw && VERBOS_NO.includes(fw);
   return card(`Objetivo específico (Propósito) ${tipBtn('obj_especifico')}`,
-    `<div class="note info"><strong>Verbos adecuados:</strong> ${VERBOS_OK.join(', ')}. <strong>NO usar:</strong> ${VERBOS_NO.join(', ')}.</div>`
+    `<div class="note info">Usa verbos que se puedan medir: <strong>${VERBOS_OK.slice(0,5).join(', ')}…</strong> Evita verbos vagos como: <em>${VERBOS_NO.join(', ')}</em> — con esos no se puede saber si el proyecto cumplió o no.</div>`
     + field('Objetivo específico — único, medible, alcanzable con los recursos del proyecto',
       `<textarea id="inp-obj-esp" oninput="S.obj_especifico=this.value;scheduleSave();patchLive()" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales de Cumbal para el monitoreo hídrico">${esc(S.obj_especifico)}</textarea>`
       + `<div id="verb-warn" class="val-err" style="display:${badVerb?'':'none'}">⚠ Verbo "${fw}" no es adecuado.</div>`
     )
   ) + card(`Resultados esperados (Componentes) ${tipBtn('resultado')}`,
-    '<div class="note info"><strong>MGA-DNP:</strong> Son estados alcanzados (participios: diseñado, implementado, capacitado). Necesarios y suficientes para lograr el objetivo. No son actividades.</div>'
+    '<div class="note info">Cada resultado es algo concreto que el proyecto entrega — no una tarea sino un logro. Se escribe como algo ya terminado: <em>diseñado, implementado, capacitado, validado…</em> Pregúntate: ¿si tengo estos resultados, logré el objetivo?</div>'
     + S.resultados.map((r,i) =>
         `<div class="res-row"><div class="res-num">R${i+1}</div>`
         + `<input type="text" value="${esc(r)}" oninput="S.resultados[${i}]=this.value;scheduleSave();patchLive()" placeholder="Resultado ${i+1}: estado alcanzado, ej: Sistema IoT diseñado y validado"></div>`
@@ -1138,13 +1138,13 @@ function renderS6() {
   const rl = resLlenos();
   return card(`Objetivo general (Fin) ${tipBtn('obj_general')}`,
     (autoOG && !S.obj_general ? `<div class="note ok">Sugerencia: <em>${autoOG.substring(0,100)}…</em> <button class="btn sm" onclick="S.obj_general=${JSON.stringify(autoOG)};scheduleSave();patchLive()">Usar</button></div>` : '')
-    + '<div class="note info"><strong>MGA-DNP:</strong> Siempre inicia con "Contribuir a…"</div>'
+    + '<div class="note info">El objetivo general empieza siempre con <strong>"Contribuir a…"</strong> porque el proyecto solo no puede resolver todo — hace su parte para un cambio más grande en el territorio.</div>'
     + field('Objetivo general',
       `<textarea id="inp-obj-gen" oninput="S.obj_general=this.value;scheduleSave();patchLive()" placeholder="Contribuir a…">${esc(S.obj_general)}</textarea>`
       + `<div id="og-warn" class="val-err" style="display:${S.obj_general && !S.obj_general.toLowerCase().startsWith('contribuir')?'':'none'}">⚠ Debe iniciar con "Contribuir a…"</div>`
     )
   ) + card(`Actividades por resultado esperado ${tipBtn('actividad')}`,
-    `<div class="note info"><strong>Acción Social MML:</strong> Sustantivos de acción — ${SUSTANTIVOS_ACT.slice(0,6).join(', ')}… Cada actividad asociada a un único resultado.</div>`
+    `<div class="note info">Cada actividad debe comenzar con un sustantivo que describe la acción: <em>${SUSTANTIVOS_ACT.slice(0,6).join(', ')}…</em> Una actividad va amarrada a un solo resultado — no puede pertenecer a dos al mismo tiempo.</div>`
     + (rl.length===0 ? '<div class="note warn">Define los resultados esperados en la Sesión 5 primero.</div>' :
       rl.map((r,ri) => {
         while(!S.actividades_struct[ri]) S.actividades_struct[ri]=[];
@@ -1179,17 +1179,17 @@ function renderS7() {
     return `<div style="border:1px solid ${ok?'#86efac':'#fca5a5'};border-radius:var(--r2);overflow:hidden;margin-bottom:10px">`
       + `<div style="background:${color};padding:7px 12px;color:#fff;font-size:11px;font-weight:600">${label}</div>`
       + `<div style="padding:10px 12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px">`
-      + `<div><div class="lbl">Indicador ${tipBtn('indicador')}</div><textarea rows="2" oninput="${kb}.ind=this.value;scheduleSave();patchLive()" placeholder="Al finalizar el proyecto, al menos X% de…" style="min-height:54px">${esc(iov.ind||'')}</textarea></div>`
-      + `<div><div class="lbl">Línea base ${tipBtn('iov_linea_base')}</div><input type="text" value="${esc(iov.base||'')}" oninput="${kb}.base=this.value;scheduleSave();patchLive()" placeholder="Valor inicial"></div>`
-      + `<div><div class="lbl">Meta</div><input type="text" value="${esc(iov.meta||'')}" oninput="${kb}.meta=this.value;scheduleSave();patchLive()" placeholder="Valor a lograr"></div>`
-      + `<div><div class="lbl">Plazo</div><input type="text" value="${esc(iov.plazo||'')}" oninput="${kb}.plazo=this.value;scheduleSave();patchLive()" placeholder="Mes / fecha"></div>`
+      + `<div><div class="lbl">Indicador ${tipBtn('indicador')}</div><textarea rows="2" oninput="${kb}.ind=this.value;scheduleSave();patchLive()" placeholder="Ej: Al mes 12, al menos 25 de los 30 jóvenes demuestran competencia en el uso del sistema mediante prueba práctica" style="min-height:54px">${esc(iov.ind||'')}</textarea></div>`
+      + `<div><div class="lbl">Línea base ${tipBtn('iov_linea_base')}</div><input type="text" value="${esc(iov.base||'')}" oninput="${kb}.base=this.value;scheduleSave();patchLive()" placeholder="Ej: 0 usuarios capacitados al inicio"></div>`
+      + `<div><div class="lbl">Meta</div><input type="text" value="${esc(iov.meta||'')}" oninput="${kb}.meta=this.value;scheduleSave();patchLive()" placeholder="Ej: 25 de 30 jóvenes capacitados"></div>`
+      + `<div><div class="lbl">Plazo</div><input type="text" value="${esc(iov.plazo||'')}" oninput="${kb}.plazo=this.value;scheduleSave();patchLive()" placeholder="Ej: Mes 12"></div>`
       + `</div>`
       + (ok ? '<div style="background:var(--g3);padding:4px 12px;font-size:10px;color:var(--g1)">✓ Indicador completo</div>'
              : '<div style="background:#fef2f2;padding:4px 12px;font-size:10px;color:#dc2626">Completa los 4 campos</div>')
       + `</div>`;
   }
   return card(`Indicadores objetivamente verificables (IOV) ${tipBtn('indicador')}`,
-    '<div class="note info"><strong>CEPAL / MGA-DNP 2020:</strong> Cada indicador debe responder: ¿cuánto + quién + dónde + cuándo + desde dónde?</div>'
+    '<div class="note info">Un buen indicador le dice a cualquier persona —sin conocer el proyecto— si se cumplió o no. Debe tener: cuántos, quiénes, en qué plazo y de dónde se parte.</div>'
     + iovRow('PROPÓSITO — Objetivo específico', '#0f766e', S.iov_proposito, 'S.iov_proposito')
     + (rl.length===0 ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' :
       rl.map((r,i) => iovRow(`R${i+1}: ${r.substring(0,50)}${r.length>50?'…':''}`, '#15803d', S.iov_resultados[i]||{}, `S.iov_resultados[${i}]`)).join(''))
@@ -1206,12 +1206,12 @@ function renderS8() {
       + `<div style="padding:8px 12px;font-size:12px;color:var(--ink3);background:var(--bg)">${narrative||'—'}</div>`
       + (indHint ? `<div style="padding:4px 12px;font-size:11px;color:var(--ink3);background:var(--bdr2)">IOV: ${indHint}</div>` : '')
       + `<div style="padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">`
-      + `<div><div class="lbl">Medio de verificación ${tipBtn('medver')}</div><textarea rows="2" oninput="${mvKey}=this.value;scheduleSave();patchLive()" placeholder="Fuente donde se obtienen los datos para medir el indicador">${esc(mvVal)}</textarea></div>`
-      + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="${supKey}=this.value;scheduleSave();patchLive()" placeholder="Factor externo, en positivo, que debe cumplirse">${esc(supVal)}</textarea></div>`
+      + `<div><div class="lbl">Medio de verificación ${tipBtn('medver')}</div><textarea rows="2" oninput="${mvKey}=this.value;scheduleSave();patchLive()" placeholder="Ej: Acta de evaluación firmada, registro fotográfico, lista de asistencia con cédulas">${esc(mvVal)}</textarea></div>`
+      + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="${supKey}=this.value;scheduleSave();patchLive()" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
       + `</div></div>`;
   }
   return card(`Medios de verificación y supuestos ${tipBtn('medver')}`,
-    '<div class="note info"><strong>Acción Social / MGA-DNP:</strong> Medio de verificación = fuente real e independiente. Supuesto = factor externo en positivo.</div>'
+    '<div class="note info">El medio de verificación es el documento o registro donde alguien puede comprobar que el resultado se logró — no puede ser solo la palabra del equipo. El supuesto es una condición externa que el proyecto no controla pero que necesita que se cumpla.</div>'
     + mvSupRow('#1d4ed8','FIN — Objetivo general', S.obj_general, S.fin_mv,'S.fin_mv', S.fin_sup,'S.fin_sup', S.fin_ind)
     + mvSupRow('#0f766e','PROPÓSITO — Objetivo específico', S.obj_especifico, S.prop_mv,'S.prop_mv', S.prop_sup,'S.prop_sup', S.iov_proposito.ind)
     + (rl.length===0 ? '<div class="note warn">Define resultados en S5.</div>' :
@@ -1220,7 +1220,7 @@ function renderS8() {
         S.res_sup[i]||'', `S.res_sup[${i}]`,
         ((S.iov_resultados||[])[i]||{}).ind)).join(''))
   ) + card(`Precondiciones ${tipBtn('precondicion')}`,
-    '<div class="note info"><strong>Acción Social MML:</strong> Requisitos previos al inicio. Sin estas condiciones el proyecto no puede arrancar.</div>'
+    '<div class="note info">Son las condiciones que deben estar listas antes de que el proyecto empiece. Sin esto, no hay forma de arrancar.</div>'
     + field('Precondiciones', `<textarea oninput="S.precondiciones=this.value;scheduleSave();patchLive()" placeholder="Ej: El equipo cuenta con la convocatoria formalizada; aliados han firmado compromisos…">${esc(S.precondiciones)}</textarea>`)
   );
 }
@@ -1268,20 +1268,20 @@ function renderS9() {
       + `<div style="padding:6px 10px;background:var(--bg)"><div class="lbl" style="margin-bottom:3px">Impacto</div><select onchange="S.riesgos[${i}].imp=this.value;scheduleSave();render()" style="font-size:12px">${['Alto','Medio','Bajo'].map(p=>`<option ${r.imp===p?'selected':''}>${p}</option>`).join('')}</select></div>`
       + `<div style="padding:6px 10px;background:${cellColor};display:flex;align-items:center;justify-content:center"><span style="font-size:11px;font-weight:600">${cell}</span></div></div>`
       + `<div style="padding:10px 12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">`
-      + `<div><div class="lbl">Descripción ${tipBtn('riesgo')}</div><textarea rows="2" oninput="S.riesgos[${i}].desc=this.value;scheduleSave();patchLive()" placeholder="¿Qué evento incierto puede ocurrir?">${esc(r.desc||'')}</textarea></div>`
-      + `<div><div class="lbl">Mitigación</div><textarea rows="2" oninput="S.riesgos[${i}].mit=this.value;scheduleSave();patchLive()" placeholder="¿Cómo reducir probabilidad o impacto?">${esc(r.mit||'')}</textarea></div>`
-      + `<div><div class="lbl">Contingencia</div><textarea rows="2" oninput="S.riesgos[${i}].cont=this.value;scheduleSave();patchLive()" placeholder="Plan B si el riesgo ocurre…">${esc(r.cont||'')}</textarea></div>`
+      + `<div><div class="lbl">Descripción ${tipBtn('riesgo')}</div><textarea rows="2" oninput="S.riesgos[${i}].desc=this.value;scheduleSave();patchLive()" placeholder="Ej: El prototipo no alcanza la precisión técnica requerida en condiciones de campo">${esc(r.desc||'')}</textarea></div>`
+      + `<div><div class="lbl">Mitigación</div><textarea rows="2" oninput="S.riesgos[${i}].mit=this.value;scheduleSave();patchLive()" placeholder="Ej: Pruebas de laboratorio con protocolo escalonado antes de la implementación en campo">${esc(r.mit||'')}</textarea></div>`
+      + `<div><div class="lbl">Contingencia</div><textarea rows="2" oninput="S.riesgos[${i}].cont=this.value;scheduleSave();patchLive()" placeholder="Ej: Ajuste del diseño con asesoría técnica especializada, sin afectar el cronograma principal">${esc(r.cont||'')}</textarea></div>`
       + `</div>`
       + (S.riesgos.length>1 ? `<div style="padding:0 12px 8px;text-align:right"><button class="btn sm" onclick="S.riesgos.splice(${i},1);scheduleSave();render()" style="color:#dc2626">Eliminar</button></div>` : '')
       + `</div>`;
   }).join('');
 
   return card(`Presupuesto por rubros SENA ${tipBtn('riesgo')}`,
-    '<div class="note info"><strong>SENNOVA 2023:</strong> Cada ítem debe justificarse y asociarse a una actividad. NO financiable: honorarios a participantes, papelería administrativa, vehículos.</div>'
+    '<div class="note info">Cada gasto debe estar amarrado a una actividad del proyecto y tener una razón clara. <strong>No se puede financiar:</strong> pago a los jóvenes participantes, papelería de oficina, ni compra de vehículos.</div>'
     + `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--g1);border-radius:var(--r);margin-bottom:12px"><span style="color:#a8d5b8;font-size:12px">Total general</span><span id="budget-total" style="color:#fff;font-size:16px;font-weight:700">$${Math.round(calcGrandTotal()).toLocaleString('es-CO')}</span></div>`
     + presHtml
   ) + card(`Gestión de riesgos ${tipBtn('riesgo')}`,
-    '<div class="note info"><strong>MGA-DNP 2020:</strong> Riesgo = evento incierto. Estrategias: mitigar, contingencia, aceptar, vigilar.</div>'
+    '<div class="note info">Un riesgo es algo que podría pasar y afectar el proyecto. Para cada uno defina qué haría para evitarlo y qué haría si de todas formas ocurre.</div>'
     + riesgosHtml
     + `<button class="btn sm" onclick="S.riesgos.push({tipo:'Técnico',desc:'',prob:'Media',imp:'Alto',mit:'',cont:''});scheduleSave();render()">+ Agregar riesgo</button>`
   );
@@ -1289,19 +1289,19 @@ function renderS9() {
 
 function renderS10() {
   return card(`Sostenibilidad ${tipBtn('sostenibilidad')}`,
-    '<div class="note info"><strong>MGA-DNP 2020:</strong> Tres dimensiones: ambiental, social e institucional.</div>'
+    '<div class="note info">Explique qué pasa con el proyecto cuando se acaba el recurso: quién lo mantiene, cómo se financia, y si la comunidad tiene la capacidad para seguir adelante sola.</div>'
     + fieldRow3(
-      field('Sostenibilidad ambiental', `<textarea oninput="S.sos_amb=this.value;scheduleSave();patchLive()" placeholder="Uso eficiente de recursos, energías renovables…">${esc(S.sos_amb)}</textarea>`),
-      field('Sostenibilidad social', `<textarea oninput="S.sos_soc=this.value;scheduleSave();patchLive()" placeholder="Apropiación comunitaria, capacidades instaladas…">${esc(S.sos_soc)}</textarea>`),
-      field('Continuidad institucional', `<textarea oninput="S.sos_cap=this.value;scheduleSave();patchLive()" placeholder="Quién opera, con qué recursos, alianzas…">${esc(S.sos_cap)}</textarea>`)
+      field('Sostenibilidad ambiental', `<textarea oninput="S.sos_amb=this.value;scheduleSave();patchLive()" placeholder="Ej: Los materiales del prototipo son reutilizables. No se generan residuos peligrosos. El sistema funciona con energía solar…">${esc(S.sos_amb)}</textarea>`),
+      field('Sostenibilidad social', `<textarea oninput="S.sos_soc=this.value;scheduleSave();patchLive()" placeholder="Ej: Los 30 jóvenes capacitados quedan con la competencia para operar y mantener el sistema. La comunidad participa en todo el proceso…">${esc(S.sos_soc)}</textarea>`),
+      field('Continuidad institucional', `<textarea oninput="S.sos_cap=this.value;scheduleSave();patchLive()" placeholder="Ej: El acueducto comunitario asume la operación. La alcaldía comprometió presupuesto para insumos anuales…">${esc(S.sos_cap)}</textarea>`)
     )
   ) + card('Impactos esperados',
-    '<div class="note info"><strong>SENNOVA / MinCiencias:</strong> Cambios de largo plazo atribuibles al proyecto.</div>'
+    '<div class="note info">Describa los cambios que va a generar el proyecto en el territorio — no solo mientras dura, sino después de que termine.</div>'
     + fieldRow2(
-      field('Impacto en formación', `<textarea oninput="S.imp_form=this.value;scheduleSave();patchLive()" placeholder="Aprendices, semilleros, competencias…">${esc(S.imp_form)}</textarea>`),
-      field('Impacto social', `<textarea oninput="S.imp_soc=this.value;scheduleSave();patchLive()" placeholder="Calidad de vida, empleo, equidad de género…">${esc(S.imp_soc)}</textarea>`),
-      field('Impacto ambiental', `<textarea oninput="S.imp_amb=this.value;scheduleSave();patchLive()" placeholder="Reducción de huella, sostenibilidad…">${esc(S.imp_amb)}</textarea>`),
-      field('Impacto tecnológico', `<textarea oninput="S.imp_tec=this.value;scheduleSave();patchLive()" placeholder="Innovación, adopción de tecnologías 4.0…">${esc(S.imp_tec)}</textarea>`)
+      field('Impacto en formación', `<textarea oninput="S.imp_form=this.value;scheduleSave();patchLive()" placeholder="Ej: 30 jóvenes desarrollan competencias en electrónica y programación IoT. Se fortalece el semillero de innovación del SENA…">${esc(S.imp_form)}</textarea>`),
+      field('Impacto social', `<textarea oninput="S.imp_soc=this.value;scheduleSave();patchLive()" placeholder="Ej: Las familias rurales acceden a agua de mejor calidad. Se generan 3 empleos técnicos para jóvenes del municipio…">${esc(S.imp_soc)}</textarea>`),
+      field('Impacto ambiental', `<textarea oninput="S.imp_amb=this.value;scheduleSave();patchLive()" placeholder="Ej: Se reduce la contaminación de fuentes hídricas por detección temprana. El sistema no genera emisiones…">${esc(S.imp_amb)}</textarea>`),
+      field('Impacto tecnológico', `<textarea oninput="S.imp_tec=this.value;scheduleSave();patchLive()" placeholder="Ej: Primera implementación de IoT para monitoreo hídrico en el municipio. Tecnología replicable en otros acueductos del suroccidente…">${esc(S.imp_tec)}</textarea>`)
     )
   );
 }
