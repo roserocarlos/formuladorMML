@@ -1061,27 +1061,36 @@ function renderS2() {
 }
 
 function renderS3() {
-  function treeGrid(arr, key, lvlClass, labelPrefix) {
+  function treeGrid(arr, key, lvlClass, labelPrefix, removable) {
     return `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(arr.length,1)},1fr)">`
-      + arr.map((v,i) => `<div class="tree-box ${lvlClass}"><div class="box-label">${labelPrefix} ${i+1}</div>`
-        + `<textarea oninput="S.${key}[${i}]=this.value;scheduleSave();patchLive()" placeholder="Redactar…">${esc(v)}</textarea></div>`).join('')
+      + arr.map((v,i) => `<div class="tree-box ${lvlClass}" style="position:relative">
+          <div class="box-label" style="display:flex;justify-content:space-between;align-items:center">
+            <span>${labelPrefix} ${i+1}</span>
+            ${removable && arr.length>1 ? `<button onclick="removeEffectCause('${key}',${i})" title="Eliminar" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px">×</button>` : ''}
+          </div>
+          <textarea oninput="S.${key}[${i}]=this.value;scheduleSave();patchLive()" placeholder="Redactar…">${esc(v)}</textarea>
+        </div>`).join('')
       + '</div>';
   }
   const NCD = S.cadir.length;
+  const NED = S.efdir.length;
   return card('Árbol de problemas',
-    '<div class="note info">Abajo van las causas (¿por qué ocurre el problema?), en el centro el problema, arriba los efectos (¿qué pasa por ese problema?). Ninguna causa debe decir "falta de…"</div>'
+    '<div class="note info">Abajo van las causas (¿por qué ocurre el problema?), en el centro el problema, arriba los efectos (¿qué pasa por ese problema?). Ninguna causa debe decir "falta de…"<br>'
+    + '<strong>Cada efecto/causa indirecta corresponde a un efecto/causa directa</strong> — por eso el número de cuadros en ambos niveles se mantiene igual.</div>'
     + '<div class="tree-wrap">'
     + `<div class="tree-level-label" style="background:#1e3a5f;color:#fff">Efectos 2.° orden ${tipBtn('efecto_indirecto')}</div>`
-    + treeGrid(S.efind,'efind','lvl-fi2','Efecto ind.')
+    + treeGrid(S.efind,'efind','lvl-fi2','Efecto ind.', false)
     + '<div class="connector-v"></div>'
     + `<div class="tree-level-label" style="background:#2563eb;color:#fff">Efectos directos ${tipBtn('efecto_directo')}</div>`
-    + treeGrid(S.efdir,'efdir','lvl-fi1','Efecto dir.')
+    + treeGrid(S.efdir,'efdir','lvl-fi1','Efecto dir.', true)
+    + '<div style="margin:6px 0 4px"><button class="btn sm" onclick="addEffectCause(\'ef\')">+ Agregar efecto</button></div>'
     + '<div class="connector-v"></div>'
     + '<div class="tree-level-label" style="background:var(--g1);color:#fff">⬛ PROBLEMA CENTRAL</div>'
     + `<div class="tree-box lvl-central"><div class="box-label">Problema central</div><div style="color:#fff;font-size:13px;font-weight:500;padding:4px 0">${S.problema||'<em style="opacity:.5">(Definir en Sesión 2)</em>'}</div></div>`
     + '<div class="connector-v"></div>'
     + `<div class="tree-level-label" style="background:#d97706;color:#fff">Causas directas ${tipBtn('causa_directa')}</div>`
-    + treeGrid(S.cadir,'cadir','lvl-ca1','Causa dir.')
+    + treeGrid(S.cadir,'cadir','lvl-ca1','Causa dir.', true)
+    + '<div style="margin:6px 0 4px"><button class="btn sm" onclick="addEffectCause(\'ca\')">+ Agregar causa</button></div>'
     + '<div class="connector-v"></div>'
     + `<div class="tree-level-label" style="background:#92400e;color:#fff">Causas 2.° orden ${tipBtn('causa_indirecta')}</div>`
     + `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(NCD,1)},1fr)">`
@@ -1091,11 +1100,23 @@ function renderS3() {
           + `<textarea oninput="S.caind[${i}]=this.value;scheduleSave();patchLive()" placeholder="Causa estructural…">${esc(S.caind[i])}</textarea></div>`;
       }).join('')
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:10px">'
-    + '<button class="btn sm" onclick="S.efdir.push(\'\');S.efind.push(\'\');scheduleSave();render()">+ Efecto directo</button>'
-    + '<button class="btn sm" onclick="S.cadir.push(\'\');S.caind.push(\'\');scheduleSave();render()">+ Causa directa</button>'
-    + '</div></div>'
+    + '</div>'
   );
+}
+
+// ── Mantiene sincronizados directos/indirectos: mismo número de cuadros ──
+function addEffectCause(kind) {
+  if (kind === 'ef') { S.efdir.push(''); S.efind.push(''); }
+  else { S.cadir.push(''); S.caind.push(''); }
+  scheduleSave(); render();
+}
+function removeEffectCause(key, idx) {
+  S[key].splice(idx, 1);
+  // remove the matching indirect row too, keeping counts in sync
+  const pair = { efdir: 'efind', cadir: 'caind' };
+  const partner = pair[key];
+  if (partner && S[partner].length > idx) S[partner].splice(idx, 1);
+  scheduleSave(); render();
 }
 
 function renderS4() {
@@ -1104,9 +1125,20 @@ function renderS4() {
   const NMD = S.mdir.length;
   const autoHtml = (auto && !S.obj_central)
     ? `<div class="note ok">Sugerencia automática: <em>${auto}</em> <button class="btn sm" onclick="S.obj_central=${JSON.stringify(auto)};scheduleSave();render()">Usar</button></div>` : '';
+  function boxRemovable(arr, key, idx, lvlClass, label, ph, partnerKey) {
+    const canRemove = arr.length > 1;
+    return `<div class="tree-box ${lvlClass}">
+      <div class="box-label" style="display:flex;justify-content:space-between;align-items:center">
+        <span>${label} ${idx+1}</span>
+        ${canRemove ? `<button onclick="removeFinMedio('${key}',${idx},'${partnerKey}')" title="Eliminar" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:14px;line-height:1;padding:0 2px">×</button>` : ''}
+      </div>
+      <textarea oninput="S.${key}[${idx}]=this.value;scheduleSave();patchLive()" placeholder="${ph}">${esc(arr[idx])}</textarea>
+    </div>`;
+  }
   return card(`Árbol de objetivos ${tipBtn('obj_central')}`,
     autoHtml
-    + '<div class="note info">Convierte cada elemento del árbol de problemas en su versión positiva: las causas se vuelven medios para lograr el objetivo, y los efectos se vuelven los fines que se quieren alcanzar.</div>'
+    + '<div class="note info">Convierte cada elemento del árbol de problemas en su versión positiva: las causas se vuelven medios para lograr el objetivo, y los efectos se vuelven los fines que se quieren alcanzar.<br>'
+    + '<strong>Cada fin/medio indirecto corresponde a uno directo</strong> — por eso ambos niveles mantienen el mismo número de cuadros.</div>'
     + '<div class="tree-wrap">'
     + '<div class="tree-level-label" style="background:#1e3a5f;color:#fff">Fines 2.° orden</div>'
     + `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(S.find_.length,1)},1fr)">`
@@ -1114,15 +1146,19 @@ function renderS4() {
     + '</div><div class="connector-v"></div>'
     + '<div class="tree-level-label" style="background:#2563eb;color:#fff">Fines directos</div>'
     + `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(S.fdir.length,1)},1fr)">`
-    + S.fdir.map((v,i)=>`<div class="tree-box lvl-fi1"><div class="box-label">Fin dir. ${i+1}</div><textarea oninput="S.fdir[${i}]=this.value;scheduleSave();patchLive()" placeholder="Fin directo…">${esc(v)}</textarea></div>`).join('')
-    + '</div><div class="connector-v"></div>'
+    + S.fdir.map((v,i)=>boxRemovable(S.fdir,'fdir',i,'lvl-fi1','Fin dir.','Fin directo…','find_')).join('')
+    + '</div>'
+    + '<div style="margin:6px 0 4px"><button class="btn sm" onclick="addFinMedio(\'fin\')">+ Agregar fin</button></div>'
+    + '<div class="connector-v"></div>'
     + '<div class="tree-level-label" style="background:var(--g1);color:#fff">🎯 OBJETIVO CENTRAL</div>'
     + `<div class="tree-box lvl-central"><div class="box-label">Objetivo central ${tipBtn('obj_central')}</div><textarea oninput="S.obj_central=this.value;scheduleSave();patchLive()" placeholder="Estado positivo alcanzado">${esc(S.obj_central)}</textarea></div>`
     + '<div class="connector-v"></div>'
     + '<div class="tree-level-label" style="background:#15803d;color:#fff">Medios directos (→ Resultados esperados)</div>'
     + `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(NMD,1)},1fr)">`
-    + S.mdir.map((v,i)=>`<div class="tree-box lvl-med1"><div class="box-label">Medio dir. ${i+1}</div><textarea oninput="S.mdir[${i}]=this.value;scheduleSave();patchLive()" placeholder="Medio directo…">${esc(v)}</textarea></div>`).join('')
-    + '</div><div class="connector-v"></div>'
+    + S.mdir.map((v,i)=>boxRemovable(S.mdir,'mdir',i,'lvl-med1','Medio dir.','Medio directo…','mind')).join('')
+    + '</div>'
+    + '<div style="margin:6px 0 4px"><button class="btn sm" onclick="addFinMedio(\'medio\')">+ Agregar medio</button></div>'
+    + '<div class="connector-v"></div>'
     + '<div class="tree-level-label" style="background:#166534;color:#fff">Medios 2.° orden</div>'
     + `<div class="tree-grid" style="grid-template-columns:repeat(${Math.max(NMD,1)},1fr)">`
     + S.mdir.map((_,i) => {
@@ -1130,11 +1166,20 @@ function renderS4() {
         return `<div class="tree-box lvl-med2"><div class="box-label">Medio ind. ${i+1}</div><textarea oninput="S.mind[${i}]=this.value;scheduleSave();patchLive()" placeholder="Medio indirecto…">${esc(S.mind[i])}</textarea></div>`;
       }).join('')
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:10px">'
-    + '<button class="btn sm" onclick="S.fdir.push(\'\');S.find_.push(\'\');scheduleSave();render()">+ Fin</button>'
-    + '<button class="btn sm" onclick="S.mdir.push(\'\');S.mind.push(\'\');scheduleSave();render()">+ Medio directo</button>'
-    + '</div></div>'
+    + '</div>'
   );
+}
+
+// ── Mantiene sincronizados fines/medios directos e indirectos ──
+function addFinMedio(kind) {
+  if (kind === 'fin') { S.fdir.push(''); S.find_.push(''); }
+  else { S.mdir.push(''); S.mind.push(''); }
+  scheduleSave(); render();
+}
+function removeFinMedio(key, idx, partnerKey) {
+  S[key].splice(idx, 1);
+  if (S[partnerKey] && S[partnerKey].length > idx) S[partnerKey].splice(idx, 1);
+  scheduleSave(); render();
 }
 
 function renderS5() {
@@ -1450,7 +1495,22 @@ function showPDFPreview() {
 // ═══════════════════════════════════════════════════════════════
 // MAIN RENDER
 // ═══════════════════════════════════════════════════════════════
+// ── Repara desincronización heredada de datos guardados antes de esta corrección ──
+// Solo agrega vacíos al más corto; nunca borra contenido ya escrito.
+function normalizeTreeArrays() {
+  function sync(dirKey, indKey) {
+    const target = Math.max(S[dirKey].length, S[indKey].length);
+    while (S[dirKey].length < target) S[dirKey].push('');
+    while (S[indKey].length < target) S[indKey].push('');
+  }
+  sync('efdir', 'efind');
+  sync('cadir', 'caind');
+  sync('fdir', 'find_');
+  sync('mdir', 'mind');
+}
+
 function renderSession() {
+  normalizeTreeArrays();
   switch(S.session) {
     case 1:  return renderS1();
     case 2:  return renderS2();
