@@ -331,63 +331,71 @@ const ADJETIVOS_NEG = ['reducido','limitado','deficiente','elevado','escaso','fr
 const SUSTANTIVOS_ACT = ['Construcción','Capacitación','Diseño','Implementación','Equipamiento','Elaboración','Distribución','Rehabilitación','Sistematización','Socialización','Desarrollo','Instalación','Evaluación','Diagnóstico','Formación','Adquisición','Validación','Prototipado'];
 
 // ═══════════════════════════════════════════════════════════════
-// TOOLTIP DEFINITIONS — Fuentes oficiales colombianas
-// Fuentes: DNP-MGA 2020, SENNOVA 2023, Bpin Manual 2022,
-//          MinCiencias Bases para MML 2022, U.Nal Guía MML 2019,
-//          Acción Social MML 2007 (adoptada por Planeación Nacional)
+// TOOLTIP DEFINITIONS — Fuentes verificadas con link real
+// Fuentes: MGA – DNP, Manual conceptual (2023, mgaayuda.dnp.gov.co)
+//          SENA — Cartilla resumen Marco Lógico (basada en CEPAL-ILPES,
+//          Aldunate & Córdoba 2011, repositorio.sena.edu.co)
+//          MinCiencias — Documento de Tipología de Proyectos CTeI v7
 // ═══════════════════════════════════════════════════════════════
 const TIPS = {
   titulo: {
     label: 'Nombre del proyecto',
-    fuente: 'Manual MGA – DNP 2020, pág. 24 · Guía de Formulación SENNOVA 2023',
-    def: 'El nombre le dice a cualquier persona qué hace el proyecto sin necesidad de leerlo completo. Debe mencionar qué se hace, para quién y dónde. El DNP establece máximo 20 palabras y que debe expresar la solución — no el problema.',
+    fuente: 'MGA – DNP, Manual conceptual (2023)',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'El nombre le dice a cualquier persona qué hace el proyecto sin necesidad de leerlo completo. Debe mencionar qué se hace, para quién y dónde. El DNP recomienda máximo 20 palabras y que debe expresar la solución — no el problema.',
     ok: '"Desarrollo de un sistema IoT de bajo costo para monitoreo de calidad hídrica en comunidades rurales del municipio de Cumbal, Nariño"',
     bad: '"Proyecto de agua" o "Mejorar el agua de Cumbal" — muy vago, no dice qué se hace ni cómo.',
     check: '¿Dice qué se hace? ¿Para quién o para qué? ¿Dónde? ¿Tiene máximo 20 palabras?'
   },
   problema: {
     label: 'Problema central',
-    fuente: 'MGA – DNP 2020, Cap. 2 · Guía de Identificación y Formulación de Proyectos – Acción Social 2007, pág. 18',
-    def: 'El problema central describe una situación negativa que ya existe y afecta a la población. No es lo que falta ni lo que hay que comprar — es lo que está pasando hoy y está mal. Debe usar adjetivos que describan la magnitud: reducido, limitado, deficiente, elevado, escaso, deteriorado.',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 22-23',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'El problema central describe una situación negativa que ya existe y afecta a la población. No es lo que falta ni lo que hay que comprar — es lo que está pasando hoy y está mal. El DNP advierte explícitamente: definirlo como "falta de algo" limita las alternativas de solución a una sola.',
     ok: '"Limitado acceso de los jóvenes rurales del municipio de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas"',
     bad: '"Falta de tecnología para el agua" — esto describe lo que no hay, no el problema que existe.',
     check: '¿Tiene un adjetivo negativo? ¿Describe algo que ya está pasando (no algo que falta)? ¿Menciona a quién afecta y dónde?'
   },
   efecto_directo: {
     label: 'Efecto directo',
-    fuente: 'MGA – DNP 2020, Cap. 2 · Manual de Formulación de Proyectos – CEPAL 2005',
-    def: 'Los efectos directos son las consecuencias inmediatas del problema — lo que pasa en la comunidad por culpa de ese problema. Van arriba del problema en el árbol y responden a la pregunta: ¿qué pasa como resultado de que este problema exista?',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 27',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'Los efectos directos son las consecuencias inmediatas del problema — lo que pasa en la comunidad por culpa de ese problema. Van arriba del problema en el árbol. El DNP aclara: no existe relación directa entre causas y efectos, la relación siempre pasa por el problema central.',
     ok: '"Deterioro de la calidad de vida de las comunidades que dependen de fuentes hídricas contaminadas"',
     bad: '"No hay tecnología" — eso es una causa del problema, no una consecuencia.',
     check: '¿Es algo que ocurre por culpa del problema central? ¿No es una causa disfrazada de efecto?'
   },
   efecto_indirecto: {
     label: 'Efecto indirecto (2.° orden)',
-    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 20',
-    def: 'Son las consecuencias de los efectos directos — el daño que se acumula si el problema sigue sin resolverse. Representan el impacto de largo plazo. Deben ser situaciones verificables, no suposiciones.',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 27',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'Son las consecuencias de los efectos directos — el daño que se acumula si el problema sigue sin resolverse. Se ubican un nivel por encima de los efectos directos. Deben ser situaciones verificables, no suposiciones.',
     ok: '"Mayor vulnerabilidad económica de las familias rurales nariñenses por inseguridad alimentaria e hídrica"',
     bad: '"Todo empeora" — no es específico ni verificable.',
     check: '¿Es consecuencia de un efecto directo (no del problema directamente)? ¿Se puede verificar que está ocurriendo?'
   },
   causa_directa: {
     label: 'Causa directa',
-    fuente: 'MGA – DNP 2020, Cap. 2 · Bases para la formulación MML – MinCiencias 2022',
-    def: 'Las causas directas explican por qué existe el problema. Van debajo del problema en el árbol. Importante: no deben escribirse como "falta de algo" sino como una condición negativa que existe. La diferencia es sutil pero importante para los evaluadores.',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 26',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'Las causas directas son las acciones o hechos concretos que dan origen al problema central — van inmediatamente debajo en el árbol. No deben escribirse como "falta de algo" sino como una condición negativa que existe.',
     ok: '"Escasa adopción de tecnologías de monitoreo ambiental en comunidades rurales nariñenses"',
     bad: '"Falta de tecnología" — describe lo que no hay; debe describir la condición que existe.',
     check: '¿Explica directamente por qué existe el problema? ¿Describe una condición que existe, no algo que falta?'
   },
   causa_indirecta: {
     label: 'Causa indirecta (2.° orden)',
-    fuente: 'MGA – DNP 2020 · Guía de Marco Lógico – U. Nacional 2019, pág. 12',
-    def: 'Son las razones detrás de las causas directas — las raíces más profundas del problema. Identificarlas ayuda a diseñar intervenciones que generen cambios duraderos y no solo soluciones temporales.',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 26',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'Son las razones detrás de las causas directas — las raíces más profundas del problema, ubicadas a partir del segundo nivel del árbol. Identificarlas ayuda a diseñar intervenciones que generen cambios duraderos.',
     ok: '"Reducida articulación entre el sistema educativo y las necesidades tecnológicas del sector rural nariñense"',
     bad: '"Pobreza" — demasiado general; no muestra relación directa con la causa de primer nivel.',
     check: '¿Explica por qué existe la causa directa a la que está ligada? ¿Es específica al contexto del proyecto?'
   },
   obj_central: {
     label: 'Objetivo central',
-    fuente: 'MGA – DNP 2020, Cap. 3 · Guía MML – Acción Social 2007, pág. 25',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 39-40',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
     def: 'Es la imagen positiva del problema central — cómo se vería la situación si el problema se resolviera. Se construye tomando el problema central y convirtiéndolo en un estado positivo y alcanzable. No es una actividad sino un estado que se logra.',
     ok: '"Acceso mejorado de los jóvenes rurales de Cumbal a herramientas tecnológicas para el monitoreo ambiental de fuentes hídricas"',
     bad: '"Comprar equipos de tecnología" — eso es una actividad, no el estado que se quiere alcanzar.',
@@ -395,63 +403,71 @@ const TIPS = {
   },
   obj_general: {
     label: 'Objetivo general (Fin)',
-    fuente: 'MGA – DNP 2020 · Guía de Formulación SENNOVA 2023, pág. 15 · Bases MML – MinCiencias 2022',
-    def: 'El objetivo general es el cambio grande al que el proyecto aporta, pero que no puede lograr solo. Siempre empieza con "Contribuir a…" porque el proyecto es solo una pieza — el cambio completo requiere más actores y más tiempo. Se toma del nivel más alto del árbol de objetivos.',
+    fuente: 'SENA — Cartilla resumen Marco Lógico, basada en Aldunate & Córdoba (CEPAL-ILPES, 2011), pág. 7-8',
+    link: 'https://repositorio.sena.edu.co/bitstream/handle/11404/8032/cartilla-resumen-marco-logico-para-formulacion-de-proyectos.pdf',
+    def: 'El objetivo general (Fin) es el cambio grande al que el proyecto aporta, pero que no puede lograr solo — mide la contribución del proyecto a mediano o largo plazo. Se redacta a partir del nivel superior del árbol de objetivos.',
     ok: '"Contribuir al mejoramiento de las condiciones de vida y la seguridad ambiental de las comunidades rurales del suroccidente nariñense mediante el fortalecimiento de capacidades tecnológicas en jóvenes"',
     bad: '"Mejorar la calidad del agua de Cumbal" — el proyecto solo no puede garantizar esto; además no empieza con "Contribuir a".',
     check: '¿Empieza con "Contribuir a…"? ¿Es más amplio que el objetivo específico? ¿El proyecto aporta pero no lo logra solo?'
   },
   obj_especifico: {
     label: 'Objetivo específico (Propósito)',
-    fuente: 'MGA – DNP 2020, Cap. 3 · Guía MML – Acción Social 2007, pág. 28 · SENNOVA 2023',
-    def: 'El objetivo específico es el cambio concreto que el proyecto sí puede lograr al terminar. Es único — un solo proyecto tiene un solo objetivo específico. Debe poder medirse: al final del proyecto se puede decir con datos si se logró o no. Los verbos que no sirven son los que no se pueden medir: apoyar, fomentar, promover.',
+    fuente: 'SENA — Cartilla resumen Marco Lógico, basada en Aldunate & Córdoba (CEPAL-ILPES, 2011), pág. 9',
+    link: 'https://repositorio.sena.edu.co/bitstream/handle/11404/8032/cartilla-resumen-marco-logico-para-formulacion-de-proyectos.pdf',
+    def: 'El objetivo específico (Propósito) es el cambio concreto que el proyecto sí puede lograr al terminar. Es único — la cartilla del SENA indica expresamente "eliminar múltiples objetivos". Debe poder medirse: al final del proyecto se puede decir con datos si se logró o no.',
     ok: '"Mejorar las capacidades tecnológicas de 30 jóvenes rurales del municipio de Cumbal para el monitoreo ambiental de fuentes hídricas mediante el desarrollo de un sistema IoT de bajo costo"',
     bad: '"Apoyar a los jóvenes en tecnología" — no se puede medir, no dice cuánto ni cómo.',
     check: '¿Empieza con verbo que se puede medir? ¿Es solo uno? ¿Dice cuántos, quiénes y dónde?'
   },
   resultado: {
     label: 'Resultado esperado (Componente)',
-    fuente: 'MGA – DNP 2020, Cap. 3 · Guía MML – Acción Social 2007, pág. 30 · MinCiencias 2022',
-    def: 'Los resultados son los productos concretos que entrega el proyecto. Son los logros necesarios para alcanzar el objetivo específico — si los tienes todos, el objetivo se logra. Se escriben como algo terminado, con participios: diseñado, implementado, capacitado, validado. No son tareas sino entregas.',
+    fuente: 'SENA — Cartilla resumen Marco Lógico, basada en Aldunate & Córdoba (CEPAL-ILPES, 2011), pág. 8',
+    link: 'https://repositorio.sena.edu.co/bitstream/handle/11404/8032/cartilla-resumen-marco-logico-para-formulacion-de-proyectos.pdf',
+    def: 'Los resultados (Componentes) son los productos concretos que entrega el proyecto. Son los logros necesarios para alcanzar el objetivo específico — si los tienes todos, el objetivo se logra. Se escriben como algo terminado, con participios: diseñado, implementado, capacitado, validado.',
     ok: '"Sistema IoT de monitoreo hídrico diseñado, ensamblado y validado" · "30 jóvenes rurales capacitados en uso y mantenimiento del sistema"',
     bad: '"Hacer talleres de capacitación" — eso es una actividad, no un resultado logrado.',
     check: '¿Está escrito como algo terminado (participio)? ¿Si se logran todos los resultados, se cumple el objetivo? ¿Se puede verificar?'
   },
   actividad: {
     label: 'Actividad',
-    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 32 · SENNOVA 2023',
-    def: 'Las actividades son las tareas concretas que producen cada resultado. Se escriben con sustantivos de acción — no con verbos en infinitivo. La diferencia: "Capacitación de 30 jóvenes" (correcto) vs "Capacitar a los jóvenes" (incorrecto para la MML). Cada actividad pertenece a un solo resultado.',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 65-66',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'Las actividades son las tareas concretas que producen cada resultado. Se escriben con sustantivos de acción — no con verbos en infinitivo. Cada actividad pertenece a un solo resultado y se cuesta a través de los insumos que requiere.',
     ok: '"Diseño y elaboración del prototipo de sensor IoT para monitoreo de turbidez y pH"',
     bad: '"Hacer reuniones" o "Comprar cosas" — demasiado vago; no permite verificar si se realizó.',
     check: '¿Empieza con sustantivo de acción? ¿Está claramente amarrada a un resultado? ¿Se puede verificar que se hizo?'
   },
   indicador: {
     label: 'Indicador objetivamente verificable (IOV)',
-    fuente: 'MGA – DNP 2020 · Manual Marco Lógico – CEPAL 2005 · Guía MML – Acción Social 2007, pág. 35',
-    def: 'El indicador le permite a cualquier evaluador —sin conocer el proyecto— verificar si se cumplió el objetivo o el resultado. Debe tener cuatro elementos: cuántos (número o porcentaje), quiénes (grupo beneficiario), cuándo (plazo) y desde dónde se parte (línea de base). Sin estos cuatro elementos no es un indicador válido.',
+    fuente: 'SENA — Cartilla resumen Marco Lógico, basada en Aldunate & Córdoba (CEPAL-ILPES, 2011), pág. 12',
+    link: 'https://repositorio.sena.edu.co/bitstream/handle/11404/8032/cartilla-resumen-marco-logico-para-formulacion-de-proyectos.pdf',
+    def: 'El indicador le permite a cualquier evaluador —sin conocer el proyecto— verificar si se cumplió el objetivo o el resultado. Debe ser objetivo, medible, relevante, específico, práctico, económico y asociado a un plazo (criterios de la guía CEPAL-ILPES).',
     ok: '"Al mes 12, al menos 25 de los 30 jóvenes beneficiarios demuestran competencia en el uso del sistema IoT mediante prueba práctica, partiendo de 0 usuarios capacitados al inicio"',
     bad: '"Los jóvenes aprenden tecnología" — no tiene número, plazo ni fuente de verificación.',
     check: '¿Tiene: número o porcentaje + grupo + plazo + línea de base? ¿Existe una fuente real para medirlo?'
   },
   medver: {
     label: 'Medio de verificación',
-    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 37 · SENNOVA 2023',
-    def: 'Es el documento, registro o fuente donde cualquier persona puede comprobar que el indicador se cumplió. Debe existir independientemente del proyecto — el equipo no puede ser el único que diga que se logró. Ejemplos válidos: actas firmadas, registros fotográficos con fecha, listas de asistencia, informes de laboratorio.',
+    fuente: 'SENA — Cartilla resumen Marco Lógico, basada en Aldunate & Córdoba (CEPAL-ILPES, 2011), pág. 12',
+    link: 'https://repositorio.sena.edu.co/bitstream/handle/11404/8032/cartilla-resumen-marco-logico-para-formulacion-de-proyectos.pdf',
+    def: 'Es el documento, registro o fuente donde cualquier persona puede comprobar que el indicador se cumplió. Debe existir independientemente del proyecto — el equipo no puede ser el único que diga que se logró.',
     ok: '"Acta de evaluación práctica firmada por instructor certificado · Registro fotográfico con fecha · Lista de asistencia con número de documento"',
     bad: '"Informe del equipo del proyecto" — el proyecto no puede ser su propio verificador.',
     check: '¿La fuente existe por fuera del proyecto? ¿Un evaluador externo puede consultarla sin depender del equipo?'
   },
   supuesto: {
     label: 'Supuesto (factor externo)',
-    fuente: 'MGA – DNP 2020 · Guía MML – Acción Social 2007, pág. 39 · Guía MML – U. Nacional 2019',
-    def: 'Los supuestos son condiciones que el proyecto necesita que se cumplan pero que no puede controlar. Se escriben en positivo — como algo que debe suceder, no como un riesgo. Por ejemplo, si el proyecto depende del clima o de decisiones de otras entidades, eso es un supuesto.',
+    fuente: 'SENA — Cartilla resumen Marco Lógico, basada en Aldunate & Córdoba (CEPAL-ILPES, 2011), pág. 10-11',
+    link: 'https://repositorio.sena.edu.co/bitstream/handle/11404/8032/cartilla-resumen-marco-logico-para-formulacion-de-proyectos.pdf',
+    def: 'Los supuestos son condiciones que el proyecto necesita que se cumplan pero que no puede controlar. Se escriben en positivo, como si el riesgo no ocurriera — la cartilla del SENA lo explica: "para ponerlo en términos positivos... los riesgos se expresan como supuestos".',
     ok: '"Las condiciones climáticas en Cumbal se mantienen dentro de rangos normales durante el proyecto" · "Las instituciones aliadas mantienen su compromiso durante la ejecución"',
     bad: '"Si no llueve demasiado" — debe estar en positivo, como condición deseable.',
     check: '¿Está escrito en positivo? ¿Es algo externo al proyecto? ¿Es realista que ocurra?'
   },
   precondicion: {
     label: 'Precondición',
-    fuente: 'Guía MML – Acción Social 2007, pág. 40 · MGA – DNP 2020',
+    fuente: 'MGA – DNP, Manual conceptual (2023)',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
     def: 'Son los requisitos que deben estar listos antes de que el proyecto arranque. Sin estas condiciones no se puede empezar. A diferencia de los supuestos —que aplican durante la ejecución— las precondiciones son el punto de partida y el equipo puede influir en que se cumplan.',
     ok: '"El equipo de jóvenes ha sido seleccionado y cuenta con carta de compromiso firmada · El espacio para los talleres ha sido confirmado por la institución aliada · Los recursos han sido formalizados"',
     bad: '"Tener ganas de trabajar" — no es verificable ni específico.',
@@ -459,7 +475,8 @@ const TIPS = {
   },
   iov_linea_base: {
     label: 'Línea de base',
-    fuente: 'MGA – DNP 2020 · Manual del Usuario BPIN 2022 · Bases MML – MinCiencias 2022',
+    fuente: 'MGA – DNP, Manual conceptual (2023), pág. 29-30',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
     def: 'La línea de base es el punto de partida — cómo está la situación antes de que el proyecto intervenga. Sin este dato no se puede demostrar que el proyecto generó un cambio. Puede ser cero si el servicio no existe, o un valor medido en el diagnóstico inicial.',
     ok: '"0 jóvenes del municipio capacitados en sistemas IoT de monitoreo ambiental (diagnóstico enero 2026)" · "8% de las fuentes hídricas con monitoreo activo (IDEAM 2025)"',
     bad: '"Muy pocos" o "casi ninguno" — no es un número concreto, no se puede comparar después.',
@@ -467,7 +484,8 @@ const TIPS = {
   },
   riesgo: {
     label: 'Riesgo',
-    fuente: 'MGA – DNP 2020, Cap. 5 · Guía de Formulación SENNOVA 2023 · Bases MML – MinCiencias 2022',
+    fuente: 'MGA – DNP, Manual conceptual (2023), Cap. 3.5',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
     def: 'Un riesgo es algo que podría ocurrir y afectar el proyecto — no es seguro que pase, pero hay que estar preparado. Se clasifican por qué tan probable es que ocurra y qué tan grave sería si ocurre. Para cada riesgo se define cómo reducirlo (mitigación) y qué hacer si de todas formas ocurre (plan de contingencia).',
     ok: '"Riesgo técnico: el prototipo no alcanza la precisión requerida en campo (Prob: Media, Impacto: Alto). Mitigación: pruebas de laboratorio con protocolo escalonado en los meses 2-4. Contingencia: ajuste de sensores con asesoría técnica especializada"',
     bad: '"Puede que no funcione" — no tiene tipo, probabilidad, impacto ni plan de respuesta.',
@@ -475,19 +493,21 @@ const TIPS = {
   },
   sostenibilidad: {
     label: 'Sostenibilidad',
-    fuente: 'MGA – DNP 2020, Cap. 6 · SENNOVA 2023 · Política Nacional de CTel 2022',
-    def: 'La sostenibilidad explica qué pasa con los beneficios del proyecto cuando se acaba el recurso. Hay tres preguntas clave: ¿quién sigue operando el proyecto?, ¿con qué dinero?, y ¿la comunidad tiene la capacidad para mantenerlo? Sin respuestas concretas a estas preguntas, el proyecto muere cuando se acaba la plata.',
+    fuente: 'MGA – DNP, Manual conceptual (2023)',
+    link: 'https://mgaayuda.dnp.gov.co/Recursos/Documento_conceptual_2023.pdf',
+    def: 'La sostenibilidad explica qué pasa con los beneficios del proyecto cuando se acaba el recurso. Hay tres preguntas clave: ¿quién sigue operando el proyecto?, ¿con qué dinero?, y ¿la comunidad tiene la capacidad para mantenerlo? Sin respuestas concretas, el proyecto muere cuando se acaba la financiación.',
     ok: '"El sistema IoT será transferido al acueducto comunitario de Cumbal. Los 30 jóvenes capacitados asumirán el mantenimiento. La alcaldía comprometió partida presupuestal para insumos anuales (Acta de compromiso adjunta)"',
     bad: '"El proyecto es sostenible porque beneficia a la comunidad" — no muestra quién lo mantiene ni con qué recursos.',
     check: '¿Dice quién opera después de terminar? ¿Hay recursos para continuar? ¿La comunidad tiene capacidad instalada?'
   },
   producto_minci: {
     label: 'Producto según tipología MinCiencias',
-    fuente: 'MinCiencias – Modelo de medición de grupos 2022 · Manual de Productos SENNOVA 2023',
-    def: 'MinCiencias clasifica los productos según su tipo: A) nuevo conocimiento (artículos, patentes), B) desarrollo tecnológico (prototipos, software, manuales técnicos), C) apropiación social (eventos, material divulgativo), D) formación (capacitaciones, trabajos de grado). El TRL indica qué tan avanzado está el desarrollo: TRL 1 es una idea, TRL 4 es validado en laboratorio, TRL 7 es probado en campo.',
-    ok: '"Prototipo funcional de sistema IoT (Tipo B – TRL 4): sensor de turbidez y pH con transmisión LoRa, validado en condiciones de laboratorio"',
+    fuente: 'MinCiencias — Documento de Tipología de Proyectos CTeI, versión 7',
+    link: 'https://minciencias.gov.co/sites/default/files/upload/noticias/documento_de_tipologias_de_proyecto_vr_07.pdf',
+    def: 'MinCiencias clasifica los productos de proyectos CTeI según tipología (investigación científica, desarrollo, innovación) con criterios específicos de calificación. El TRL indica qué tan avanzado está el desarrollo: TRL 1 es una idea, TRL 4 es validado en laboratorio, TRL 7 es probado en campo.',
+    ok: '"Prototipo funcional de sistema IoT (TRL 4): sensor de turbidez y pH con transmisión LoRa, validado en condiciones de laboratorio"',
     bad: '"Un sistema de monitoreo" — sin tipo, sin TRL, sin descripción técnica que permita evaluarlo.',
-    check: '¿Está clasificado en la tipología MinCiencias? ¿Tiene TRL justificado? ¿El medio de verificación permite comprobarlo?'
+    check: '¿Está clasificado según la tipología MinCiencias? ¿Tiene TRL justificado? ¿El medio de verificación permite comprobarlo?'
   }
 };
 
@@ -631,7 +651,7 @@ function buildOnboardHTML() {
       <div class="onboard-icon">🌿</div>
       <h1>Formulador MML</h1>
       <p><strong>Jóvenes en Ciencia para la Paz – Capítulo Ipiales</strong></p>
-      <p style="font-size:13px;color:var(--ink3);margin-top:4px">Herramienta para formular tu proyecto de innovación usando Marco Lógico (MML).</p>
+      <p style="font-size:13px;color:var(--ink3);margin-top:4px">Acá vas a formular tu proyecto de innovación usando Marco Lógico (MML) — la misma metodología que pide el SENA y MinCiencias para ejecutar recursos de CTel.</p>
       <div class="onboard-steps">
         <div class="onboard-step"><div class="onboard-step-num">1</div><div>Completa las sesiones en orden. El botón <strong>?</strong> te muestra la definición y un ejemplo de cómo redactar correctamente.</div></div>
         <div class="onboard-step"><div class="onboard-step-num">2</div><div>La <strong>Matriz MML</strong> se llena automáticamente mientras escribes — la ves en el panel derecho.</div></div>
@@ -900,10 +920,13 @@ function showTip(key) {
   const div = document.createElement('div');
   div.id = 'tip-overlay';
   div.className = 'tooltip-overlay';
+  const linkHtml = tip.link
+    ? ' — <a href="' + tip.link + '" target="_blank" rel="noopener" style="color:#2563EB;text-decoration:underline">ver documento</a>'
+    : '';
   div.innerHTML =
     '<div class="tooltip-box">' +
     '<h4>' + tip.label + '</h4>' +
-    '<div class="source">📚 Fuente: ' + tip.fuente + '</div>' +
+    '<div class="source">📚 Fuente: ' + tip.fuente + linkHtml + '</div>' +
     '<div class="tip-section">' +
       '<div class="tip-section-label def">Definición oficial</div>' +
       '<p>' + tip.def + '</p>' +
