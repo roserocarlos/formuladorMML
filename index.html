@@ -1483,12 +1483,19 @@ function showPDFPreview() {
     '<tr><th style="background:#d97706">Causas directas</th></tr>'+S.cadir.filter(c=>c).map(c=>'<tr><td style="background:#fffbeb">'+esc(c)+'</td></tr>').join('')+
     '<tr><th style="background:#92400e">Causas 2.° orden</th></tr>'+S.caind.filter(c=>c).map(c=>'<tr><td style="background:#fef3c7">'+esc(c)+'</td></tr>').join('')+
     '</table>'+
-    '<h2>2. Objetivos</h2>'+
+    '<h2>2. Árbol de objetivos</h2>'+
+    '<table class="pdf-table"><tr><th style="background:#1e3a5f">Fines 2.° orden</th></tr>'+S.find_.filter(f=>f).map(f=>'<tr><td style="background:#eff6ff">'+esc(f)+'</td></tr>').join('')+
+    '<tr><th style="background:#2563eb">Fines directos</th></tr>'+S.fdir.filter(f=>f).map(f=>'<tr><td style="background:#dbeafe">'+esc(f)+'</td></tr>').join('')+
+    '<tr><th>Objetivo central</th></tr><tr><td style="background:var(--g3);font-weight:500">'+esc(S.obj_central||'—')+'</td></tr>'+
+    '<tr><th style="background:#15803d">Medios directos</th></tr>'+S.mdir.filter(m=>m).map(m=>'<tr><td style="background:#dcfce7">'+esc(m)+'</td></tr>').join('')+
+    '<tr><th style="background:#166534">Medios 2.° orden</th></tr>'+S.mind.filter(m=>m).map(m=>'<tr><td style="background:#f0fdf4">'+esc(m)+'</td></tr>').join('')+
+    '</table>'+
+    '<h2>3. Objetivos</h2>'+
     '<table class="pdf-table"><tr><td style="font-weight:600;width:30%">Objetivo general</td><td>'+esc(S.obj_general||'—')+'</td></tr>'+
     '<tr><td style="font-weight:600">Objetivo específico</td><td>'+esc(S.obj_especifico||'—')+'</td></tr>'+
     rl.map((r,i)=>'<tr><td style="font-weight:600">R'+(i+1)+'</td><td>'+esc(r)+'</td></tr>').join('')+
     '</table>'+
-    '<h2>3. Matriz de Marco Lógico</h2>'+
+    '<h2>4. Matriz de Marco Lógico</h2>'+
     '<div class="mml-wrap"><table class="mml-table">'+
     '<tr><th style="width:25%">Resumen narrativo</th><th style="width:28%">Indicador (IOV)</th><th style="width:24%">Medio de verificación</th><th>Supuesto</th></tr>'+
     '<tr class="row-fin"><td><span class="mml-lbl">FIN</span>'+esc(S.obj_general||'—')+'</td><td>'+esc(S.fin_ind||'—')+'</td><td>'+esc(S.fin_mv||'—')+'</td><td>'+esc(S.fin_sup||'—')+'</td></tr>'+
