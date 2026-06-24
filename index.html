@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -543,6 +544,14 @@ let S = {
   mdir: ['','',''], mind: ['','',''],
   obj_general:'', obj_especifico:'',
   resultados: ['','','',''],
+  // ── NUEVO: soporta varios objetivos específicos (modelo MGA-DNP/MinCiencias) ──
+  // Si tu convocatoria usa Propósito único (modelo SENA/CEPAL), basta con uno.
+  objetivos_esp: [
+    { id:1, texto:'', resultados:['','','',''],
+      iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
+      mv:'', sup:'', res_mv:[], res_sup:[],
+      actividades_struct:[] }
+  ],
   actividades_struct: [],  // array of arrays
   iov_proposito: {ind:'',base:'',meta:'',plazo:''},
   iov_resultados: [],
@@ -738,6 +747,70 @@ function updateSaveDot(state) {
 function loadSaved() {
   const saved = loadLS();
   if (saved && saved.data) Object.assign(S, saved.data);
+  migrateToMultiObjective();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MIGRACIÓN — convierte la estructura vieja (1 objetivo específico)
+// a la nueva (varios objetivos específicos, modelo MGA-DNP/MinCiencias).
+// Se ejecuta UNA SOLA VEZ por sesión cargada. Nunca borra datos —
+// solo los reorganiza dentro de objetivos_esp[0].
+// ═══════════════════════════════════════════════════════════════
+function migrateToMultiObjective() {
+  // Si ya tiene la estructura nueva con contenido real, no migrar de nuevo
+  const yaTieneEstructuraNueva =
+    Array.isArray(S.objetivos_esp) &&
+    S.objetivos_esp.length > 0 &&
+    (S.objetivos_esp[0].texto || (S.objetivos_esp[0].resultados||[]).some(r=>r));
+
+  if (yaTieneEstructuraNueva) return; // nada que migrar, ya está en formato nuevo
+
+  // Asegura que exista el array, por si vino de un guardado muy antiguo
+  if (!Array.isArray(S.objetivos_esp) || S.objetivos_esp.length === 0) {
+    S.objetivos_esp = [{ id:1, texto:'', resultados:['','','',''],
+      iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
+      mv:'', sup:'', res_mv:[], res_sup:[], actividades_struct:[] }];
+  }
+
+  const tieneDatosViejos = S.obj_especifico || (S.resultados||[]).some(r=>r);
+  if (!tieneDatosViejos) return; // usuario nuevo, no hay nada que migrar
+
+  // Vuelca todo el contenido viejo dentro del primer objetivo específico
+  const o = S.objetivos_esp[0];
+  o.texto = S.obj_especifico || '';
+  o.resultados = (S.resultados && S.resultados.length) ? [...S.resultados] : ['','','',''];
+  o.iov = S.iov_proposito ? {...S.iov_proposito} : {ind:'',base:'',meta:'',plazo:''};
+  o.iov_resultados = Array.isArray(S.iov_resultados) ? S.iov_resultados.map(x=>({...x})) : [];
+  o.mv = S.prop_mv || '';
+  o.sup = S.prop_sup || '';
+  o.res_mv = Array.isArray(S.res_mv) ? [...S.res_mv] : [];
+  o.res_sup = Array.isArray(S.res_sup) ? [...S.res_sup] : [];
+  o.actividades_struct = Array.isArray(S.actividades_struct) ? S.actividades_struct.map(a=>[...(a||[])]) : [];
+
+  scheduleSave(); // persiste la migración de inmediato
+}
+
+// ── Helpers para trabajar con varios objetivos específicos ──
+function resLlenosDe(obj) { return (obj.resultados||[]).filter(r=>r); }
+function todosLosResultados() {
+  // Junta los resultados de TODOS los objetivos específicos, para compatibilidad
+  // con código que antes recorría el array plano S.resultados
+  return S.objetivos_esp.flatMap(o => resLlenosDe(o));
+}
+function addObjetivoEspecifico() {
+  const nextId = Math.max(...S.objetivos_esp.map(o=>o.id), 0) + 1;
+  S.objetivos_esp.push({ id:nextId, texto:'', resultados:['',''],
+    iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
+    mv:'', sup:'', res_mv:[], res_sup:[], actividades_struct:[] });
+  scheduleSave(); render();
+}
+function removeObjetivoEspecifico(idx) {
+  if (S.objetivos_esp.length <= 1) return; // siempre debe quedar al menos 1
+  const o = S.objetivos_esp[idx];
+  const preview = (o.texto||'').substring(0,40) || `Objetivo específico ${idx+1}`;
+  if (!confirm(`¿Eliminar "${preview}"?\n\nEsto también borrará sus resultados, indicadores y actividades asociadas.`)) return;
+  S.objetivos_esp.splice(idx, 1);
+  scheduleSave(); render();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -782,14 +855,6 @@ function patchLive() {
 }
 
 function patchValidation() {
-  // Obj especifico verb check
-  const vw = document.getElementById('verb-warn');
-  if (vw) {
-    const fw = (S.obj_especifico||'').split(' ')[0].toLowerCase();
-    const bad = fw && VERBOS_NO.includes(fw);
-    vw.style.display = bad ? '' : 'none';
-    if (bad) vw.textContent = '⚠ Verbo "'+fw+'" no es adecuado. Use: '+VERBOS_OK.slice(0,5).join(', ')+'…';
-  }
   // Obj general check
   const ogw = document.getElementById('og-warn');
   if (ogw) {
@@ -812,7 +877,63 @@ function calcRubroTotal(rb) {
   return (rb.items||[]).reduce((s,it)=>s+(parseFloat(it.cant)||0)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0);
 }
 function pct() { return Math.round(S.completed.length/10*100); }
-function resLlenos() { return (S.resultados||[]).filter(r=>r); }
+// resLlenos() ahora junta los resultados de TODOS los objetivos específicos.
+// Esto mantiene compatibilidad con S6/S7/S8/PDF que ya iteran sobre este array
+// sin necesidad de tocar ese código.
+function resLlenos() { return todosLosResultados(); }
+
+// ── Mapeo de índice plano → (objetivo, resultado) ──────────────
+// S6/S7/S8/PDF recorren "todos los resultados" con un índice plano (0,1,2,3...)
+// como si hubiera un solo objetivo específico. Esta función traduce ese índice
+// plano a qué objetivo específico y qué posición dentro de él corresponde,
+// para poder seguir usando S.actividades_struct[i], S.iov_resultados[i], etc.
+// sin reescribir S6/S7/S8 — siguen leyendo/escribiendo en el lugar correcto.
+function mapFlatIndex(flatIdx) {
+  let count = 0;
+  for (let oi = 0; oi < S.objetivos_esp.length; oi++) {
+    const llenos = resLlenosDe(S.objetivos_esp[oi]);
+    if (flatIdx < count + llenos.length) {
+      // posición real dentro de o.resultados (no solo entre los "llenos")
+      const o = S.objetivos_esp[oi];
+      let seen = 0;
+      for (let ri = 0; ri < o.resultados.length; ri++) {
+        if (o.resultados[ri]) {
+          if (seen === flatIdx - count) return { oi, ri };
+          seen++;
+        }
+      }
+    }
+    count += llenos.length;
+  }
+  return { oi: 0, ri: 0 }; // fallback seguro
+}
+function getActividadesStruct(flatIdx) {
+  const {oi, ri} = mapFlatIndex(flatIdx);
+  const o = S.objetivos_esp[oi];
+  if (!o.actividades_struct[ri]) o.actividades_struct[ri] = [];
+  return o.actividades_struct[ri];
+}
+function getIovResultado(flatIdx) {
+  const {oi, ri} = mapFlatIndex(flatIdx);
+  return (S.objetivos_esp[oi].iov_resultados||[])[ri] || {};
+}
+function setIovResultado(flatIdx, field, val) {
+  const {oi, ri} = mapFlatIndex(flatIdx);
+  const o = S.objetivos_esp[oi];
+  if (!o.iov_resultados[ri]) o.iov_resultados[ri] = {};
+  o.iov_resultados[ri][field] = val;
+  scheduleSave(); patchLive();
+}
+function getResMv(flatIdx) { const {oi,ri}=mapFlatIndex(flatIdx); return (S.objetivos_esp[oi].res_mv||[])[ri]||''; }
+function getResSup(flatIdx){ const {oi,ri}=mapFlatIndex(flatIdx); return (S.objetivos_esp[oi].res_sup||[])[ri]||''; }
+function setResMv(flatIdx, val){ const {oi,ri}=mapFlatIndex(flatIdx); const o=S.objetivos_esp[oi]; while(o.res_mv.length<=ri)o.res_mv.push(''); o.res_mv[ri]=val; scheduleSave(); patchLive(); }
+function setResSup(flatIdx, val){ const {oi,ri}=mapFlatIndex(flatIdx); const o=S.objetivos_esp[oi]; while(o.res_sup.length<=ri)o.res_sup.push(''); o.res_sup[ri]=val; scheduleSave(); patchLive(); }
+function setActividad(flatIdx, ai, val){
+  const arr = getActividadesStruct(flatIdx);
+  arr[ai] = val; scheduleSave(); patchLive();
+}
+function addActividad(flatIdx){ getActividadesStruct(flatIdx).push(''); scheduleSave(); render(); }
+function removeActividad(flatIdx, ai){ const arr=getActividadesStruct(flatIdx); arr.splice(ai,1); scheduleSave(); render(); }
 function showToast(msg, type='', persist=false) {
   const t = document.getElementById('toast');
   t.innerHTML = `<span style="flex:1">${msg}</span>`
@@ -848,23 +969,26 @@ function sessionCompleteness() {
       return {filled, total, pct:Math.round(filled/total*100)};
     }
     case 5: {
-      const filled = [S.obj_especifico, ...rl].filter(Boolean).length;
-      const total = 1 + Math.max(rl.length, 3);
+      const textos = S.objetivos_esp.map(o=>o.texto).filter(Boolean);
+      const filled = [...textos, ...rl].length;
+      const total = S.objetivos_esp.length + Math.max(rl.length, 3);
       return {filled, total, pct:Math.round(filled/total*100)};
     }
     case 6: {
-      const acts = (S.actividades_struct||[]).flatMap(a=>a||[]).filter(Boolean);
+      const acts = S.objetivos_esp.flatMap(o=>(o.actividades_struct||[]).flatMap(a=>a||[])).filter(Boolean);
       const filled = [S.obj_general, ...acts].filter(Boolean).length;
       const total = 1 + rl.length * 2;
       return {filled:Math.min(filled,total), total, pct:Math.round(Math.min(filled,total)/total*100)};
     }
     case 7: {
-      const propOk = S.iov_proposito.ind && S.iov_proposito.base && S.iov_proposito.meta && S.iov_proposito.plazo ? 1 : 0;
-      const resOk = rl.filter((_,i)=>{const v=S.iov_resultados[i]||{};return v.ind&&v.base&&v.meta&&v.plazo;}).length;
-      return {filled:propOk+resOk, total:1+rl.length, pct:Math.round((propOk+resOk)/(1+Math.max(rl.length,1))*100)};
+      const propOk = S.objetivos_esp.filter(o=>o.iov.ind && o.iov.base && o.iov.meta && o.iov.plazo).length;
+      const resOk = rl.filter((_,i)=>{const v=getIovResultado(i);return v.ind&&v.base&&v.meta&&v.plazo;}).length;
+      const total = S.objetivos_esp.length + rl.length;
+      return {filled:propOk+resOk, total:Math.max(total,1), pct:Math.round((propOk+resOk)/Math.max(total,1)*100)};
     }
     case 8: {
-      const fields = [S.fin_mv,S.fin_sup,S.prop_mv,S.prop_sup,S.precondiciones];
+      const propFields = S.objetivos_esp.flatMap(o=>[o.mv,o.sup]);
+      const fields = [S.fin_mv,S.fin_sup,...propFields,S.precondiciones];
       const filled = fields.filter(Boolean).length;
       return {filled, total:fields.length, pct:Math.round(filled/fields.length*100)};
     }
@@ -972,16 +1096,19 @@ function buildMatrixPreview() {
     (S.fin_ind ? '<div class="mp-sub">IOV: '+S.fin_ind+'</div>' : '') +
     '</div></div>';
 
-  // PROPÓSITO
-  html += '<div class="mp-row mp-prop">' +
-    '<div class="mp-header">PROPÓSITO — Objetivo específico</div>' +
-    '<div class="mp-body">' + (S.obj_especifico || empty) +
-    (S.iov_proposito.ind ? '<div class="mp-sub">IOV: '+S.iov_proposito.ind+'</div>' : '') +
-    '</div></div>';
+  // PROPÓSITO(S) — uno o varios
+  const multiplesProp = S.objetivos_esp.length > 1;
+  S.objetivos_esp.forEach((o,oi) => {
+    html += '<div class="mp-row mp-prop">' +
+      '<div class="mp-header">PROPÓSITO'+(multiplesProp?' '+(oi+1):'')+' — Objetivo específico</div>' +
+      '<div class="mp-body">' + (o.texto || empty) +
+      (o.iov.ind ? '<div class="mp-sub">IOV: '+o.iov.ind+'</div>' : '') +
+      '</div></div>';
+  });
 
   // RESULTADOS
   rl.forEach((r,i) => {
-    const iov = (S.iov_resultados||[])[i]||{};
+    const iov = getIovResultado(i);
     html += '<div class="mp-row mp-res">' +
       '<div class="mp-header">R'+(i+1)+'</div>' +
       '<div class="mp-body">' + r +
@@ -989,9 +1116,9 @@ function buildMatrixPreview() {
       '</div></div>';
   });
 
-  // ACTIVIDADES
-  const allActs = (S.actividades_struct||[]).flatMap((arr,ri)=>
-    (arr||[]).filter(a=>a).map((a,ai)=>'A'+(ri+1)+'.'+(ai+1)+': '+a));
+  // ACTIVIDADES — de todos los objetivos específicos
+  const allActs = S.objetivos_esp.flatMap(o => (o.actividades_struct||[]))
+    .flatMap((arr,ri) => (arr||[]).filter(a=>a).map((a,ai)=>'A'+(ri+1)+'.'+(ai+1)+': '+a));
   if(allActs.length) {
     html += '<div class="mp-row mp-act">' +
       '<div class="mp-header">ACTIVIDADES</div>' +
@@ -1183,42 +1310,60 @@ function removeFinMedio(key, idx, partnerKey) {
 }
 
 function renderS5() {
-  const fw = (S.obj_especifico||'').split(' ')[0].toLowerCase();
-  const badVerb = fw && VERBOS_NO.includes(fw);
-  return card(`Objetivo específico (Propósito) ${tipBtn('obj_especifico')}`,
-    `<div class="note info">Usa verbos que se puedan medir: <strong>${VERBOS_OK.slice(0,5).join(', ')}…</strong> Evita verbos vagos como: <em>${VERBOS_NO.join(', ')}</em> — con esos no se puede saber si el proyecto cumplió o no.</div>`
-    + field('Objetivo específico — único, medible, alcanzable con los recursos del proyecto',
-      `<textarea id="inp-obj-esp" oninput="S.obj_especifico=this.value;scheduleSave();patchLive()" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales de Cumbal para el monitoreo hídrico">${esc(S.obj_especifico)}</textarea>`
-      + `<div id="verb-warn" class="val-err" style="display:${badVerb?'':'none'}">⚠ Verbo "${fw}" no es adecuado.</div>`
-    )
-  ) + card(`Resultados esperados (Componentes) ${tipBtn('resultado')}`,
-    '<div class="note info">Cada resultado es algo concreto que el proyecto entrega — no una tarea sino un logro. Se escribe como algo ya terminado: <em>diseñado, implementado, capacitado, validado…</em> Pregúntate: ¿si tengo estos resultados, logré el objetivo?</div>'
-    + S.resultados.map((r,i) =>
-        `<div class="res-row"><div class="res-num">R${i+1}</div>`
-        + `<input type="text" value="${esc(r)}" oninput="S.resultados[${i}]=this.value;scheduleSave();patchLive()" placeholder="Resultado ${i+1}: estado alcanzado, ej: Sistema IoT diseñado y validado" style="flex:1">`
-        + (S.resultados.length>1 ? `<button onclick="removeResultado(${i})" title="Eliminar resultado ${i+1}" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:18px;line-height:1;padding:0 6px;flex-shrink:0">×</button>` : '')
-        + `</div>`
-      ).join('')
-    + '<button class="btn sm" style="margin-top:6px" onclick="S.resultados.push(\'\');scheduleSave();render()">+ Resultado</button>'
+  function objetivoCard(o, idx) {
+    const fw = (o.texto||'').split(' ')[0].toLowerCase();
+    const badVerb = fw && VERBOS_NO.includes(fw);
+    const numLabel = S.objetivos_esp.length > 1 ? ` ${idx+1}` : '';
+    const canRemove = S.objetivos_esp.length > 1;
+    return `<div style="border:1px solid var(--bdr2);border-radius:var(--r3);overflow:hidden;margin-bottom:14px">
+      <div style="background:#0f766e;padding:9px 14px;display:flex;align-items:center;justify-content:space-between">
+        <span style="color:#fff;font-size:13px;font-weight:600">Objetivo específico${numLabel} (Propósito) ${tipBtn('obj_especifico')}</span>
+        ${canRemove ? `<button onclick="removeObjetivoEspecifico(${idx})" title="Eliminar este objetivo específico" style="background:none;border:none;cursor:pointer;color:#fff;opacity:.8;font-size:18px;line-height:1;padding:0 4px">×</button>` : ''}
+      </div>
+      <div style="padding:14px">
+        <div class="note info" style="margin-bottom:10px">Usa verbos que se puedan medir: <strong>${VERBOS_OK.slice(0,5).join(', ')}…</strong> Evita verbos vagos como: <em>${VERBOS_NO.join(', ')}</em></div>
+        <textarea oninput="S.objetivos_esp[${idx}].texto=this.value;scheduleSave();patchLive()" placeholder="Ej: Mejorar las capacidades tecnológicas de 30 jóvenes rurales de Cumbal para el monitoreo hídrico">${esc(o.texto)}</textarea>
+        ${badVerb ? `<div class="val-err">⚠ Verbo "${fw}" no es adecuado.</div>` : ''}
+
+        <div style="margin-top:16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)">Resultados esperados de este objetivo ${tipBtn('resultado')}</div>
+        <div class="note info" style="margin-top:6px">Cada resultado es algo concreto que el proyecto entrega — se escribe como algo ya terminado: <em>diseñado, implementado, capacitado, validado…</em></div>
+        ${o.resultados.map((r,ri) =>
+          `<div class="res-row"><div class="res-num">R${idx+1}.${ri+1}</div>`
+          + `<input type="text" value="${esc(r)}" oninput="S.objetivos_esp[${idx}].resultados[${ri}]=this.value;scheduleSave();patchLive()" placeholder="Resultado ${ri+1}: estado alcanzado, ej: Sistema IoT diseñado y validado" style="flex:1">`
+          + (o.resultados.length>1 ? `<button onclick="removeResultadoDe(${idx},${ri})" title="Eliminar" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:18px;line-height:1;padding:0 6px;flex-shrink:0">×</button>` : '')
+          + `</div>`
+        ).join('')}
+        <button class="btn sm" style="margin-top:6px" onclick="S.objetivos_esp[${idx}].resultados.push('');scheduleSave();render()">+ Resultado</button>
+      </div>
+    </div>`;
+  }
+
+  const multiplesObjetivos = S.objetivos_esp.length > 1;
+  return card(`Objetivo${multiplesObjetivos?'s':''} específico${multiplesObjetivos?'s':''} y resultados`,
+    '<div class="note info">'
+    + 'Algunas convocatorias (SENA/CEPAL) usan un único objetivo específico. Otras (MGA-DNP, MinCiencias, SGR, Bancoldex, MinTIC) permiten <strong>varios</strong> — uno por cada causa directa o frente de intervención. '
+    + 'Por defecto verás uno solo; usa el botón de abajo <strong>solo si tu convocatoria lo requiere</strong>.</div>'
+    + S.objetivos_esp.map((o,idx) => objetivoCard(o, idx)).join('')
+    + `<button class="btn" onclick="addObjetivoEspecifico()" style="width:100%;border-style:dashed">+ Agregar otro objetivo específico</button>`
   );
 }
 
-// ── Borra un resultado y todo lo que depende de él en cascada ──
-// (su indicador IOV, sus actividades, su medio de verificación, su supuesto)
-function removeResultado(idx) {
-  const r = S.resultados[idx];
-  const preview = (r||'').substring(0,40) || `Resultado ${idx+1}`;
+// ── Borra un resultado dentro de un objetivo específico, en cascada ──
+function removeResultadoDe(oIdx, rIdx) {
+  const o = S.objetivos_esp[oIdx];
+  const preview = (o.resultados[rIdx]||'').substring(0,40) || `Resultado ${rIdx+1}`;
   if (!confirm(`¿Eliminar "${preview}"?\n\nEsto también borrará su indicador, actividades, medio de verificación y supuesto asociados.`)) return;
-  S.resultados.splice(idx, 1);
-  if (Array.isArray(S.iov_resultados) && S.iov_resultados.length > idx) S.iov_resultados.splice(idx, 1);
-  if (Array.isArray(S.actividades_struct) && S.actividades_struct.length > idx) S.actividades_struct.splice(idx, 1);
-  if (Array.isArray(S.res_mv) && S.res_mv.length > idx) S.res_mv.splice(idx, 1);
-  if (Array.isArray(S.res_sup) && S.res_sup.length > idx) S.res_sup.splice(idx, 1);
+  o.resultados.splice(rIdx, 1);
+  if (Array.isArray(o.iov_resultados) && o.iov_resultados.length > rIdx) o.iov_resultados.splice(rIdx, 1);
+  if (Array.isArray(o.actividades_struct) && o.actividades_struct.length > rIdx) o.actividades_struct.splice(rIdx, 1);
+  if (Array.isArray(o.res_mv) && o.res_mv.length > rIdx) o.res_mv.splice(rIdx, 1);
+  if (Array.isArray(o.res_sup) && o.res_sup.length > rIdx) o.res_sup.splice(rIdx, 1);
   scheduleSave(); render();
 }
 
 function renderS6() {
-  const autoOG = S.obj_especifico ? 'Contribuir a '+S.obj_especifico.charAt(0).toLowerCase()+S.obj_especifico.slice(1) : '';
+  const primerTexto = S.objetivos_esp[0].texto;
+  const autoOG = primerTexto ? 'Contribuir a '+primerTexto.charAt(0).toLowerCase()+primerTexto.slice(1) : '';
   const rl = resLlenos();
   return card(`Objetivo general (Fin) ${tipBtn('obj_general')}`,
     (autoOG && !S.obj_general ? `<div class="note ok">Sugerencia: <em>${autoOG.substring(0,100)}…</em> <button class="btn sm" onclick="S.obj_general=${JSON.stringify(autoOG)};scheduleSave();patchLive()">Usar</button></div>` : '')
@@ -1231,24 +1376,24 @@ function renderS6() {
     `<div class="note info">Cada actividad debe comenzar con un sustantivo que describe la acción: <em>${SUSTANTIVOS_ACT.slice(0,6).join(', ')}…</em> Una actividad va amarrada a un solo resultado — no puede pertenecer a dos al mismo tiempo.</div>`
     + (rl.length===0 ? '<div class="note warn">Define los resultados esperados en la Sesión 5 primero.</div>' :
       rl.map((r,ri) => {
-        while(!S.actividades_struct[ri]) S.actividades_struct[ri]=[];
-        if(S.actividades_struct[ri].length===0) S.actividades_struct[ri].push('');
+        const acts = getActividadesStruct(ri);
+        if (acts.length===0) acts.push('');
         return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:12px">`
           + `<div style="background:var(--g1);padding:8px 12px;color:#fff;font-size:12px;font-weight:500">R${ri+1}: ${r}</div>`
           + `<div style="padding:10px 12px">`
-          + S.actividades_struct[ri].map((a,ai) => {
+          + acts.map((a,ai) => {
               const fw2 = (a||'').split(' ')[0];
               const goodAct = !fw2 || SUSTANTIVOS_ACT.map(s=>s.toLowerCase()).includes(fw2.toLowerCase());
               return `<div class="act-row"><div class="act-code">A${ri+1}.${ai+1}</div><div style="flex:1">`
-                + `<input type="text" value="${esc(a)}" oninput="S.actividades_struct[${ri}][${ai}]=this.value;scheduleSave();patchLive()" placeholder="${SUSTANTIVOS_ACT[ai%SUSTANTIVOS_ACT.length]} de…" style="border-color:${a&&!goodAct?'#fca5a5':''}">`
+                + `<input type="text" value="${esc(a)}" oninput="setActividad(${ri},${ai},this.value)" placeholder="${SUSTANTIVOS_ACT[ai%SUSTANTIVOS_ACT.length]} de…" style="border-color:${a&&!goodAct?'#fca5a5':''}">`
                 + (a && !goodAct ? `<div class="val-err">⚠ Inicie con sustantivo: ${SUSTANTIVOS_ACT.slice(0,4).join(', ')}…</div>` : '')
                 + `</div>`
-                + (S.actividades_struct[ri].length>1 ? `<button class="btn sm" onclick="S.actividades_struct[${ri}].splice(${ai},1);scheduleSave();render()" style="color:#dc2626;padding:5px 8px">×</button>` : '')
+                + (acts.length>1 ? `<button class="btn sm" onclick="removeActividad(${ri},${ai})" style="color:#dc2626;padding:5px 8px">×</button>` : '')
                 + `</div>`;
             }).join('')
-          + `<button class="btn sm" style="margin-top:6px" onclick="S.actividades_struct[${ri}].push('');scheduleSave();render()">+ Actividad para R${ri+1}</button>`
+          + `<button class="btn sm" style="margin-top:6px" onclick="addActividad(${ri})">+ Actividad para R${ri+1}</button>`
           + `</div>`
-          + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${S.actividades_struct[ri].filter(a=>a).length} actividad(es) → R${ri+1}</div>`
+          + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${acts.filter(a=>a).length} actividad(es) → R${ri+1}${acts.filter(a=>a).length===0?' <span style="color:#d97706">⚠ sin actividades</span>':''}</div>`
           + `</div>`;
       }).join(''))
   );
@@ -1256,7 +1401,6 @@ function renderS6() {
 
 function renderS7() {
   const rl = resLlenos();
-  while(S.iov_resultados.length < rl.length) S.iov_resultados.push({ind:'',base:'',meta:'',plazo:''});
   function iovRow(label, color, iov, keyBase) {
     const ok = iov.ind && iov.base && iov.meta && iov.plazo;
     const kb = keyBase;
@@ -1272,18 +1416,36 @@ function renderS7() {
              : '<div style="background:#fef2f2;padding:4px 12px;font-size:10px;color:#dc2626">Completa los 4 campos</div>')
       + `</div>`;
   }
+  // Igual que iovRow, pero para resultados con índice plano (usa setIovResultado, no strings)
+  function iovRowResultado(label, flatIdx) {
+    const iov = getIovResultado(flatIdx);
+    const ok = iov.ind && iov.base && iov.meta && iov.plazo;
+    return `<div style="border:1px solid ${ok?'#86efac':'#fca5a5'};border-radius:var(--r2);overflow:hidden;margin-bottom:10px">`
+      + `<div style="background:#15803d;padding:7px 12px;color:#fff;font-size:11px;font-weight:600">${label}</div>`
+      + `<div style="padding:10px 12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px">`
+      + `<div><div class="lbl">Indicador ${tipBtn('indicador')}</div><textarea rows="2" oninput="setIovResultado(${flatIdx},'ind',this.value)" placeholder="Ej: Al mes 12, al menos 25 de los 30 jóvenes demuestran competencia..." style="min-height:54px">${esc(iov.ind||'')}</textarea></div>`
+      + `<div><div class="lbl">Línea base ${tipBtn('iov_linea_base')}</div><input type="text" value="${esc(iov.base||'')}" oninput="setIovResultado(${flatIdx},'base',this.value)" placeholder="Ej: 0 usuarios al inicio"></div>`
+      + `<div><div class="lbl">Meta</div><input type="text" value="${esc(iov.meta||'')}" oninput="setIovResultado(${flatIdx},'meta',this.value)" placeholder="Ej: 25 de 30"></div>`
+      + `<div><div class="lbl">Plazo</div><input type="text" value="${esc(iov.plazo||'')}" oninput="setIovResultado(${flatIdx},'plazo',this.value)" placeholder="Ej: Mes 12"></div>`
+      + `</div>`
+      + (ok ? '<div style="background:var(--g3);padding:4px 12px;font-size:10px;color:var(--g1)">✓ Indicador completo</div>'
+             : '<div style="background:#fef2f2;padding:4px 12px;font-size:10px;color:#dc2626">Completa los 4 campos</div>')
+      + `</div>`;
+  }
+  const multiples = S.objetivos_esp.length > 1;
   return card(`Indicadores objetivamente verificables (IOV) ${tipBtn('indicador')}`,
     '<div class="note info">Un buen indicador le dice a cualquier persona —sin conocer el proyecto— si se cumplió o no. Debe tener: cuántos, quiénes, en qué plazo y de dónde se parte.</div>'
-    + iovRow('PROPÓSITO — Objetivo específico', '#0f766e', S.iov_proposito, 'S.iov_proposito')
+    + S.objetivos_esp.map((o,oi) => iovRow(
+        `PROPÓSITO${multiples?' '+(oi+1):''} — ${(o.texto||'Objetivo específico '+(oi+1)).substring(0,60)}`,
+        '#0f766e', o.iov, `S.objetivos_esp[${oi}].iov`
+      )).join('')
     + (rl.length===0 ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' :
-      rl.map((r,i) => iovRow(`R${i+1}: ${r.substring(0,50)}${r.length>50?'…':''}`, '#15803d', S.iov_resultados[i]||{}, `S.iov_resultados[${i}]`)).join(''))
+      rl.map((r,i) => iovRowResultado(`R${i+1}: ${r.substring(0,50)}${r.length>50?'…':''}`, i)).join(''))
   );
 }
 
 function renderS8() {
   const rl = resLlenos();
-  while(S.res_mv.length<rl.length) S.res_mv.push('');
-  while(S.res_sup.length<rl.length) S.res_sup.push('');
   function mvSupRow(color, badge, narrative, mvVal, mvKey, supVal, supKey, indHint) {
     return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:10px">`
       + `<div style="background:${color};padding:7px 12px;color:#fff;font-size:11px;font-weight:600">${badge}</div>`
@@ -1294,15 +1456,29 @@ function renderS8() {
       + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="${supKey}=this.value;scheduleSave();patchLive()" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
       + `</div></div>`;
   }
+  // Variante para resultados con índice plano — usa setResMv/setResSup (no strings de key)
+  function mvSupRowResultado(badge, narrative, flatIdx, indHint) {
+    const mvVal = getResMv(flatIdx), supVal = getResSup(flatIdx);
+    return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:10px">`
+      + `<div style="background:#15803d;padding:7px 12px;color:#fff;font-size:11px;font-weight:600">${badge}</div>`
+      + `<div style="padding:8px 12px;font-size:12px;color:var(--ink3);background:var(--bg)">${narrative||'—'}</div>`
+      + (indHint ? `<div style="padding:4px 12px;font-size:11px;color:var(--ink3);background:var(--bdr2)">IOV: ${indHint}</div>` : '')
+      + `<div style="padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">`
+      + `<div><div class="lbl">Medio de verificación ${tipBtn('medver')}</div><textarea rows="2" oninput="setResMv(${flatIdx},this.value)" placeholder="Ej: Acta de evaluación firmada, registro fotográfico, lista de asistencia con cédulas">${esc(mvVal)}</textarea></div>`
+      + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="setResSup(${flatIdx},this.value)" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
+      + `</div></div>`;
+  }
+  const multiples = S.objetivos_esp.length > 1;
   return card(`Medios de verificación y supuestos ${tipBtn('medver')}`,
     '<div class="note info">El medio de verificación es el documento o registro donde alguien puede comprobar que el resultado se logró — no puede ser solo la palabra del equipo. El supuesto es una condición externa que el proyecto no controla pero que necesita que se cumpla.</div>'
     + mvSupRow('#1d4ed8','FIN — Objetivo general', S.obj_general, S.fin_mv,'S.fin_mv', S.fin_sup,'S.fin_sup', S.fin_ind)
-    + mvSupRow('#0f766e','PROPÓSITO — Objetivo específico', S.obj_especifico, S.prop_mv,'S.prop_mv', S.prop_sup,'S.prop_sup', S.iov_proposito.ind)
+    + S.objetivos_esp.map((o,oi) => mvSupRow('#0f766e',
+        `PROPÓSITO${multiples?' '+(oi+1):''} — Objetivo específico`, o.texto,
+        o.mv||'', `S.objetivos_esp[${oi}].mv`,
+        o.sup||'', `S.objetivos_esp[${oi}].sup`,
+        o.iov.ind)).join('')
     + (rl.length===0 ? '<div class="note warn">Define resultados en S5.</div>' :
-      rl.map((r,i) => mvSupRow('#15803d',`R${i+1}: ${r.substring(0,40)}…`, r,
-        S.res_mv[i]||'', `S.res_mv[${i}]`,
-        S.res_sup[i]||'', `S.res_sup[${i}]`,
-        ((S.iov_resultados||[])[i]||{}).ind)).join(''))
+      rl.map((r,i) => mvSupRowResultado(`R${i+1}: ${r.substring(0,40)}…`, r, i, getIovResultado(i).ind)).join(''))
   ) + card(`Precondiciones ${tipBtn('precondicion')}`,
     '<div class="note info">Son las condiciones que deben estar listas antes de que el proyecto empiece. Sin esto, no hay forma de arrancar.</div>'
     + field('Precondiciones', `<textarea oninput="S.precondiciones=this.value;scheduleSave();patchLive()" placeholder="Ej: El equipo cuenta con la convocatoria formalizada; aliados han firmado compromisos…">${esc(S.precondiciones)}</textarea>`)
@@ -1311,8 +1487,16 @@ function renderS8() {
 
 function renderS9() {
   const rl = resLlenos();
-  const allActs = (S.actividades_struct||[]).flatMap((arr,ri) =>
-    (arr||[]).filter(a=>a).map((a,ai) => ({code:`A${ri+1}.${ai+1}`, label:a})));
+  // Junta actividades de TODOS los objetivos específicos para el desplegable del presupuesto
+  const allActs = S.objetivos_esp.flatMap((o, oi) => {
+    const llenos = resLlenosDe(o);
+    return (o.actividades_struct||[]).flatMap((arr, localRi) => {
+      // localRi es el índice dentro de este objetivo; necesitamos el índice plano global para el código
+      const flatRi = todosLosResultados().indexOf(o.resultados[localRi]);
+      const ri = flatRi >= 0 ? flatRi : localRi;
+      return (arr||[]).filter(a=>a).map((a,ai) => ({code:`A${ri+1}.${ai+1}`, label:a}));
+    });
+  });
   const actOptions = allActs.map(a => `<option value="${a.code}">${a.code}: ${a.label.substring(0,25)}</option>`).join('');
 
   const presHtml = RUBROS_SENA.map(rb => {
@@ -1492,23 +1676,25 @@ function showPDFPreview() {
     '</table>'+
     '<h2>3. Objetivos</h2>'+
     '<table class="pdf-table"><tr><td style="font-weight:600;width:30%">Objetivo general</td><td>'+esc(S.obj_general||'—')+'</td></tr>'+
-    '<tr><td style="font-weight:600">Objetivo específico</td><td>'+esc(S.obj_especifico||'—')+'</td></tr>'+
+    S.objetivos_esp.map((o,oi)=>'<tr><td style="font-weight:600">Objetivo específico'+(S.objetivos_esp.length>1?' '+(oi+1):'')+'</td><td>'+esc(o.texto||'—')+'</td></tr>').join('')+
     rl.map((r,i)=>'<tr><td style="font-weight:600">R'+(i+1)+'</td><td>'+esc(r)+'</td></tr>').join('')+
     '</table>'+
     '<h2>4. Matriz de Marco Lógico</h2>'+
     '<div class="mml-wrap"><table class="mml-table">'+
     '<tr><th style="width:25%">Resumen narrativo</th><th style="width:28%">Indicador (IOV)</th><th style="width:24%">Medio de verificación</th><th>Supuesto</th></tr>'+
     '<tr class="row-fin"><td><span class="mml-lbl">FIN</span>'+esc(S.obj_general||'—')+'</td><td>'+esc(S.fin_ind||'—')+'</td><td>'+esc(S.fin_mv||'—')+'</td><td>'+esc(S.fin_sup||'—')+'</td></tr>'+
-    '<tr class="row-prop"><td><span class="mml-lbl">PROPÓSITO</span>'+esc(S.obj_especifico||'—')+'</td>'+
-    '<td>'+esc(S.iov_proposito.ind||'—')+'<br><small>Base: '+esc(S.iov_proposito.base||'—')+' → Meta: '+esc(S.iov_proposito.meta||'—')+' → '+esc(S.iov_proposito.plazo||'—')+'</small></td>'+
-    '<td>'+esc(S.prop_mv||'—')+'</td><td>'+esc(S.prop_sup||'—')+'</td></tr>'+
-    rl.map((r,i)=>{const iov=(S.iov_resultados||[])[i]||{};
+    S.objetivos_esp.map((o,oi)=>
+      '<tr class="row-prop"><td><span class="mml-lbl">PROPÓSITO'+(S.objetivos_esp.length>1?' '+(oi+1):'')+'</span>'+esc(o.texto||'—')+'</td>'+
+      '<td>'+esc(o.iov.ind||'—')+'<br><small>Base: '+esc(o.iov.base||'—')+' → Meta: '+esc(o.iov.meta||'—')+' → '+esc(o.iov.plazo||'—')+'</small></td>'+
+      '<td>'+esc(o.mv||'—')+'</td><td>'+esc(o.sup||'—')+'</td></tr>'
+    ).join('')+
+    rl.map((r,i)=>{const iov=getIovResultado(i);
       return '<tr class="row-res"><td><span class="mml-lbl">R'+(i+1)+'</span>'+esc(r)+'</td>'+
       '<td>'+esc(iov.ind||'—')+'<br><small>Base: '+esc(iov.base||'—')+' → '+esc(iov.meta||'—')+' → '+esc(iov.plazo||'—')+'</small></td>'+
-      '<td>'+esc((S.res_mv||[])[i]||'—')+'</td><td>'+esc((S.res_sup||[])[i]||'—')+'</td></tr>';
+      '<td>'+esc(getResMv(i)||'—')+'</td><td>'+esc(getResSup(i)||'—')+'</td></tr>';
     }).join('')+
     '<tr class="row-act"><td><span class="mml-lbl">ACTIVIDADES</span>'+
-    (S.actividades_struct||[]).flatMap((arr,ri)=>(arr||[]).filter(a=>a).map((a,ai)=>'A'+(ri+1)+'.'+(ai+1)+': '+esc(a))).join('<br>')+
+    S.objetivos_esp.flatMap(o=>(o.actividades_struct||[])).flatMap((arr,ri)=>(arr||[]).filter(a=>a).map((a,ai)=>'A'+(ri+1)+'.'+(ai+1)+': '+esc(a))).join('<br>')+
     '</td><td colspan="2" style="font-size:10px;color:var(--ink3)">Sin indicadores de actividad en la MML</td><td>—</td></tr>'+
     (S.precondiciones?'<tr class="row-pre"><td colspan="4"><strong>Precondiciones:</strong> '+esc(S.precondiciones)+'</td></tr>':'')+
     '</table></div>'+
