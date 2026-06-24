@@ -1195,10 +1195,26 @@ function renderS5() {
     '<div class="note info">Cada resultado es algo concreto que el proyecto entrega — no una tarea sino un logro. Se escribe como algo ya terminado: <em>diseñado, implementado, capacitado, validado…</em> Pregúntate: ¿si tengo estos resultados, logré el objetivo?</div>'
     + S.resultados.map((r,i) =>
         `<div class="res-row"><div class="res-num">R${i+1}</div>`
-        + `<input type="text" value="${esc(r)}" oninput="S.resultados[${i}]=this.value;scheduleSave();patchLive()" placeholder="Resultado ${i+1}: estado alcanzado, ej: Sistema IoT diseñado y validado"></div>`
+        + `<input type="text" value="${esc(r)}" oninput="S.resultados[${i}]=this.value;scheduleSave();patchLive()" placeholder="Resultado ${i+1}: estado alcanzado, ej: Sistema IoT diseñado y validado" style="flex:1">`
+        + (S.resultados.length>1 ? `<button onclick="removeResultado(${i})" title="Eliminar resultado ${i+1}" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:18px;line-height:1;padding:0 6px;flex-shrink:0">×</button>` : '')
+        + `</div>`
       ).join('')
     + '<button class="btn sm" style="margin-top:6px" onclick="S.resultados.push(\'\');scheduleSave();render()">+ Resultado</button>'
   );
+}
+
+// ── Borra un resultado y todo lo que depende de él en cascada ──
+// (su indicador IOV, sus actividades, su medio de verificación, su supuesto)
+function removeResultado(idx) {
+  const r = S.resultados[idx];
+  const preview = (r||'').substring(0,40) || `Resultado ${idx+1}`;
+  if (!confirm(`¿Eliminar "${preview}"?\n\nEsto también borrará su indicador, actividades, medio de verificación y supuesto asociados.`)) return;
+  S.resultados.splice(idx, 1);
+  if (Array.isArray(S.iov_resultados) && S.iov_resultados.length > idx) S.iov_resultados.splice(idx, 1);
+  if (Array.isArray(S.actividades_struct) && S.actividades_struct.length > idx) S.actividades_struct.splice(idx, 1);
+  if (Array.isArray(S.res_mv) && S.res_mv.length > idx) S.res_mv.splice(idx, 1);
+  if (Array.isArray(S.res_sup) && S.res_sup.length > idx) S.res_sup.splice(idx, 1);
+  scheduleSave(); render();
 }
 
 function renderS6() {
