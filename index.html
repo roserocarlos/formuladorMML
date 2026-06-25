@@ -925,6 +925,12 @@ function setIovResultado(flatIdx, field, val) {
 }
 function getResMv(flatIdx) { const {oi,ri}=mapFlatIndex(flatIdx); return (S.objetivos_esp[oi].res_mv||[])[ri]||''; }
 function getResSup(flatIdx){ const {oi,ri}=mapFlatIndex(flatIdx); return (S.objetivos_esp[oi].res_sup||[])[ri]||''; }
+// Etiqueta jerárquica real (ej. "R1.2") para un índice plano — usar SIEMPRE en vez de "R"+(i+1),
+// porque el índice plano no coincide con el objetivo específico al que pertenece el resultado.
+function resLabel(flatIdx) {
+  const {oi, ri} = mapFlatIndex(flatIdx);
+  return `R${oi+1}.${ri+1}`;
+}
 function setResMv(flatIdx, val){ const {oi,ri}=mapFlatIndex(flatIdx); const o=S.objetivos_esp[oi]; while(o.res_mv.length<=ri)o.res_mv.push(''); o.res_mv[ri]=val; scheduleSave(); patchLive(); }
 function setResSup(flatIdx, val){ const {oi,ri}=mapFlatIndex(flatIdx); const o=S.objetivos_esp[oi]; while(o.res_sup.length<=ri)o.res_sup.push(''); o.res_sup[ri]=val; scheduleSave(); patchLive(); }
 function setActividad(flatIdx, ai, val){
@@ -1109,15 +1115,16 @@ function buildMatrixPreview() {
   rl.forEach((r,i) => {
     const iov = getIovResultado(i);
     html += '<div class="mp-row mp-res">' +
-      '<div class="mp-header">R'+(i+1)+'</div>' +
+      '<div class="mp-header">'+resLabel(i)+'</div>' +
       '<div class="mp-body">' + r +
       (iov.ind ? '<div class="mp-sub">IOV: '+iov.ind+'</div>' : '') +
       '</div></div>';
   });
 
-  // ACTIVIDADES — de todos los objetivos específicos
-  const allActs = S.objetivos_esp.flatMap(o => (o.actividades_struct||[]))
-    .flatMap((arr,ri) => (arr||[]).filter(a=>a).map((a,ai)=>'A'+(ri+1)+'.'+(ai+1)+': '+a));
+  // ACTIVIDADES — de todos los objetivos específicos, con numeración jerárquica real
+  const allActs = S.objetivos_esp.flatMap((o, oi) =>
+    (o.actividades_struct||[]).flatMap((arr, ri) =>
+      (arr||[]).filter(a=>a).map((a,ai)=>'A'+(oi+1)+'.'+(ri+1)+'.'+(ai+1)+': '+a)));
   if(allActs.length) {
     html += '<div class="mp-row mp-act">' +
       '<div class="mp-header">ACTIVIDADES</div>' +
@@ -1377,22 +1384,23 @@ function renderS6() {
       rl.map((r,ri) => {
         const acts = getActividadesStruct(ri);
         if (acts.length===0) acts.push('');
+        const rlbl = resLabel(ri);
         return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:12px">`
-          + `<div style="background:var(--g1);padding:8px 12px;color:#fff;font-size:12px;font-weight:500">R${ri+1}: ${r}</div>`
+          + `<div style="background:var(--g1);padding:8px 12px;color:#fff;font-size:12px;font-weight:500">${rlbl}: ${r}</div>`
           + `<div style="padding:10px 12px">`
           + acts.map((a,ai) => {
               const fw2 = (a||'').split(' ')[0];
               const goodAct = !fw2 || SUSTANTIVOS_ACT.map(s=>s.toLowerCase()).includes(fw2.toLowerCase());
-              return `<div class="act-row"><div class="act-code">A${ri+1}.${ai+1}</div><div style="flex:1">`
+              return `<div class="act-row"><div class="act-code">A${rlbl.substring(1)}.${ai+1}</div><div style="flex:1">`
                 + `<input type="text" value="${esc(a)}" oninput="setActividad(${ri},${ai},this.value)" placeholder="${SUSTANTIVOS_ACT[ai%SUSTANTIVOS_ACT.length]} de…" style="border-color:${a&&!goodAct?'#fca5a5':''}">`
                 + (a && !goodAct ? `<div class="val-err">⚠ Inicie con sustantivo: ${SUSTANTIVOS_ACT.slice(0,4).join(', ')}…</div>` : '')
                 + `</div>`
                 + (acts.length>1 ? `<button class="btn sm" onclick="removeActividad(${ri},${ai})" style="color:#dc2626;padding:5px 8px">×</button>` : '')
                 + `</div>`;
             }).join('')
-          + `<button class="btn sm" style="margin-top:6px" onclick="addActividad(${ri})">+ Actividad para R${ri+1}</button>`
+          + `<button class="btn sm" style="margin-top:6px" onclick="addActividad(${ri})">+ Actividad para ${rlbl}</button>`
           + `</div>`
-          + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${acts.filter(a=>a).length} actividad(es) → R${ri+1}${acts.filter(a=>a).length===0?' <span style="color:#d97706">⚠ sin actividades</span>':''}</div>`
+          + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${acts.filter(a=>a).length} actividad(es) → ${rlbl}${acts.filter(a=>a).length===0?' <span style="color:#d97706">⚠ sin actividades</span>':''}</div>`
           + `</div>`;
       }).join(''))
   );
@@ -1439,7 +1447,7 @@ function renderS7() {
         '#0f766e', o.iov, `S.objetivos_esp[${oi}].iov`
       )).join('')
     + (rl.length===0 ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' :
-      rl.map((r,i) => iovRowResultado(`R${i+1}: ${r.substring(0,50)}${r.length>50?'…':''}`, i)).join(''))
+      rl.map((r,i) => iovRowResultado(`${resLabel(i)}: ${r.substring(0,50)}${r.length>50?'…':''}`, i)).join(''))
   );
 }
 
@@ -1477,7 +1485,7 @@ function renderS8() {
         o.sup||'', `S.objetivos_esp[${oi}].sup`,
         o.iov.ind)).join('')
     + (rl.length===0 ? '<div class="note warn">Define resultados en S5.</div>' :
-      rl.map((r,i) => mvSupRowResultado(`R${i+1}: ${r.substring(0,40)}…`, r, i, getIovResultado(i).ind)).join(''))
+      rl.map((r,i) => mvSupRowResultado(`${resLabel(i)}: ${r.substring(0,40)}…`, r, i, getIovResultado(i).ind)).join(''))
   ) + card(`Precondiciones ${tipBtn('precondicion')}`,
     '<div class="note info">Son las condiciones que deben estar listas antes de que el proyecto empiece. Sin esto, no hay forma de arrancar.</div>'
     + field('Precondiciones', `<textarea oninput="S.precondiciones=this.value;scheduleSave();patchLive()" placeholder="Ej: El equipo cuenta con la convocatoria formalizada; aliados han firmado compromisos…">${esc(S.precondiciones)}</textarea>`)
@@ -1486,16 +1494,11 @@ function renderS8() {
 
 function renderS9() {
   const rl = resLlenos();
-  // Junta actividades de TODOS los objetivos específicos para el desplegable del presupuesto
-  const allActs = S.objetivos_esp.flatMap((o, oi) => {
-    const llenos = resLlenosDe(o);
-    return (o.actividades_struct||[]).flatMap((arr, localRi) => {
-      // localRi es el índice dentro de este objetivo; necesitamos el índice plano global para el código
-      const flatRi = todosLosResultados().indexOf(o.resultados[localRi]);
-      const ri = flatRi >= 0 ? flatRi : localRi;
-      return (arr||[]).filter(a=>a).map((a,ai) => ({code:`A${ri+1}.${ai+1}`, label:a}));
-    });
-  });
+  // Junta actividades de TODOS los objetivos específicos para el desplegable del presupuesto,
+  // usando la numeración jerárquica real (objetivo.resultado.actividad) — no busca por texto.
+  const allActs = S.objetivos_esp.flatMap((o, oi) =>
+    (o.actividades_struct||[]).flatMap((arr, ri) =>
+      (arr||[]).filter(a=>a).map((a,ai) => ({code:`A${oi+1}.${ri+1}.${ai+1}`, label:a}))));
   const actOptions = allActs.map(a => `<option value="${a.code}">${a.code}: ${a.label.substring(0,25)}</option>`).join('');
 
   const presHtml = RUBROS_SENA.map(rb => {
@@ -1676,7 +1679,7 @@ function showPDFPreview() {
     '<h2>3. Objetivos</h2>'+
     '<table class="pdf-table"><tr><td style="font-weight:600;width:30%">Objetivo general</td><td>'+esc(S.obj_general||'—')+'</td></tr>'+
     S.objetivos_esp.map((o,oi)=>'<tr><td style="font-weight:600">Objetivo específico'+(S.objetivos_esp.length>1?' '+(oi+1):'')+'</td><td>'+esc(o.texto||'—')+'</td></tr>').join('')+
-    rl.map((r,i)=>'<tr><td style="font-weight:600">R'+(i+1)+'</td><td>'+esc(r)+'</td></tr>').join('')+
+    rl.map((r,i)=>'<tr><td style="font-weight:600">'+resLabel(i)+'</td><td>'+esc(r)+'</td></tr>').join('')+
     '</table>'+
     '<h2>4. Matriz de Marco Lógico</h2>'+
     '<div class="mml-wrap"><table class="mml-table">'+
@@ -1688,12 +1691,12 @@ function showPDFPreview() {
       '<td>'+esc(o.mv||'—')+'</td><td>'+esc(o.sup||'—')+'</td></tr>'
     ).join('')+
     rl.map((r,i)=>{const iov=getIovResultado(i);
-      return '<tr class="row-res"><td><span class="mml-lbl">R'+(i+1)+'</span>'+esc(r)+'</td>'+
+      return '<tr class="row-res"><td><span class="mml-lbl">'+resLabel(i)+'</span>'+esc(r)+'</td>'+
       '<td>'+esc(iov.ind||'—')+'<br><small>Base: '+esc(iov.base||'—')+' → '+esc(iov.meta||'—')+' → '+esc(iov.plazo||'—')+'</small></td>'+
       '<td>'+esc(getResMv(i)||'—')+'</td><td>'+esc(getResSup(i)||'—')+'</td></tr>';
     }).join('')+
     '<tr class="row-act"><td><span class="mml-lbl">ACTIVIDADES</span>'+
-    S.objetivos_esp.flatMap(o=>(o.actividades_struct||[])).flatMap((arr,ri)=>(arr||[]).filter(a=>a).map((a,ai)=>'A'+(ri+1)+'.'+(ai+1)+': '+esc(a))).join('<br>')+
+    S.objetivos_esp.flatMap((o,oi)=>(o.actividades_struct||[]).flatMap((arr,ri)=>(arr||[]).filter(a=>a).map((a,ai)=>'A'+(oi+1)+'.'+(ri+1)+'.'+(ai+1)+': '+esc(a)))).join('<br>')+
     '</td><td colspan="2" style="font-size:10px;color:var(--ink3)">Sin indicadores de actividad en la MML</td><td>—</td></tr>'+
     (S.precondiciones?'<tr class="row-pre"><td colspan="4"><strong>Precondiciones:</strong> '+esc(S.precondiciones)+'</td></tr>':'')+
     '</table></div>'+
