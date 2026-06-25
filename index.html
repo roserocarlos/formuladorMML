@@ -697,13 +697,19 @@ function loadDB() {
       if (e.target.result) {
         const idb = JSON.parse(e.target.result.v);
         const ls = loadLS();
-        // Use most recent
-        if (!ls || (idb.t && ls.t && idb.t > ls.t)) {
+        // Use most recent — pero NUNCA si eso significa reemplazar contenido real
+        // por un payload vacío. Esta salvaguarda es la corrección directa al
+        // incidente de pérdida de datos del 25 de junio de 2026.
+        const idbEsMasReciente = !ls || (idb.t && ls.t && idb.t > ls.t);
+        const reemplazaríaContenidoBuenoConVacío = hasContent(S) && !hasContent(idb.data);
+        if (idbEsMasReciente && !reemplazaríaContenidoBuenoConVacío) {
           Object.assign(S, idb.data);
           migrateToMultiObjective(); // re-aplicar migración: IndexedDB puede traer un payload
                                       // más viejo (sin objetivos_esp poblado) que sobrescribe
                                       // lo que loadSaved() ya había migrado al inicio.
           render();
+        } else if (reemplazaríaContenidoBuenoConVacío) {
+          console.warn('Formulador MML: carga desde IndexedDB bloqueada — habría reemplazado datos con contenido por un estado vacío.');
         }
       }
     };
@@ -723,6 +729,23 @@ function loadLS() {
   return null;
 }
 
+// ── Salvaguarda anti-pérdida de datos ───────────────────────────────
+// Detecta si un objeto de estado tiene contenido real escrito por el usuario
+// (no solo la estructura vacía por defecto). Se usa para bloquear cualquier
+// guardado o carga que reemplazaría datos buenos por datos vacíos —
+// la causa raíz del incidente del 25 de junio de 2026.
+function hasContent(data) {
+  if (!data) return false;
+  const camposTexto = ['titulo','problema','obj_central','obj_general','obj_especifico','resumen'];
+  if (camposTexto.some(k => data[k] && String(data[k]).trim())) return true;
+  const camposArray = ['efdir','efind','cadir','caind','fdir','find_','mdir','mind','resultados'];
+  if (camposArray.some(k => Array.isArray(data[k]) && data[k].some(v => v && String(v).trim()))) return true;
+  if (Array.isArray(data.objetivos_esp) && data.objetivos_esp.some(o =>
+    (o.texto && o.texto.trim()) || (Array.isArray(o.resultados) && o.resultados.some(r => r && r.trim()))
+  )) return true;
+  return false;
+}
+
 let saveTimer = null;
 function scheduleSave() {
   updateSaveDot('saving');
@@ -731,9 +754,27 @@ function scheduleSave() {
 }
 
 function doSave() {
+  // Nunca persistir un estado vacío si ya había contenido guardado antes —
+  // evita que un S vacío (por ejemplo tras una carga fallida) sobrescriba
+  // datos reales ya guardados en localStorage o IndexedDB.
+  if (!hasContent(S)) {
+    const previo = loadLS();
+    if (previo && hasContent(previo.data)) {
+      console.warn('Formulador MML: guardado bloqueado — el estado actual está vacío pero ya existían datos guardados. No se sobrescribió nada.');
+      updateSaveDot('saved');
+      return;
+    }
+  }
   const payload = JSON.stringify({data:S, t:Date.now()});
   saveLS(payload);
   saveDB(payload);
+  // Respaldo rotativo: conserva la última versión CON CONTENIDO conocida,
+  // en una clave separada que nunca se sobrescribe con datos vacíos.
+  // Red de seguridad final, recuperable desde la consola con:
+  // localStorage.getItem('mml_sena_v3_backup')
+  if (hasContent(S)) {
+    try { localStorage.setItem(STORAGE_KEY + '_backup', payload); } catch(e) {}
+  }
   updateSaveDot('saved');
 }
 
@@ -746,9 +787,26 @@ function updateSaveDot(state) {
 }
 
 // Load on start
+let _restauroDesdeRespaldo = false;
 function loadSaved() {
   const saved = loadLS();
   if (saved && saved.data) Object.assign(S, saved.data);
+
+  // Red de seguridad: si lo que cargamos viene vacío, pero existe un respaldo
+  // con contenido real (guardado la última vez que S sí tenía datos), úsalo.
+  if (!hasContent(S)) {
+    try {
+      const backup = localStorage.getItem(STORAGE_KEY + '_backup');
+      if (backup) {
+        const parsed = JSON.parse(backup);
+        if (parsed && hasContent(parsed.data)) {
+          Object.assign(S, parsed.data);
+          _restauroDesdeRespaldo = true;
+        }
+      }
+    } catch(e) {}
+  }
+
   migrateToMultiObjective();
 }
 
@@ -1854,6 +1912,12 @@ window.addEventListener('load', () => {
   loadSaved();
   initDB();
   render();
+  if (_restauroDesdeRespaldo) {
+    setTimeout(() => showToast(
+      '⚠ Se restauró tu último respaldo guardado porque la carga normal venía vacía. Verifica que todo esté correcto y exporta un respaldo JSON desde el menú.',
+      'err', true
+    ), 300);
+  }
 });
 
 // Auto-save on visibility change (tab switch / close)
