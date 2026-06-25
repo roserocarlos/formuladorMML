@@ -638,6 +638,9 @@ function buildDrawerHTML() {
     <button class="sidebar-btn" onclick="importJSON();closeDrawer()">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 5 17 10"/></svg>Importar respaldo
     </button>
+    <button class="sidebar-btn" onclick="checkEmergencyBackup();closeDrawer()" style="color:#92400e">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Revisar respaldo de emergencia
+    </button>
   </div>`;
 }
 
@@ -1704,6 +1707,28 @@ function importJSON() {
   inp.click();
 }
 
+// Permite al usuario revisar manualmente si existe un respaldo de emergencia
+// (la última versión CON CONTENIDO guardada) sin necesitar la consola del navegador.
+function checkEmergencyBackup() {
+  try {
+    const backup = localStorage.getItem(STORAGE_KEY + '_backup');
+    if (!backup) { showToast('No hay respaldo de emergencia disponible.', ''); return; }
+    const parsed = JSON.parse(backup);
+    if (!parsed || !hasContent(parsed.data)) { showToast('El respaldo de emergencia está vacío.', ''); return; }
+    const fecha = parsed.t ? new Date(parsed.t).toLocaleString('es-CO') : 'desconocida';
+    if (hasContent(S)) {
+      if (!confirm(`Hay un respaldo de emergencia del ${fecha}. Tu sesión actual ya tiene contenido — ¿quieres reemplazarlo con el respaldo de todos modos?`)) return;
+    } else {
+      if (!confirm(`Se encontró un respaldo de emergencia del ${fecha} con datos. ¿Restaurarlo ahora?`)) return;
+    }
+    Object.assign(S, parsed.data);
+    scheduleSave(); render();
+    showToast('Respaldo de emergencia restaurado ✓','green');
+  } catch(e) {
+    showToast('Error al leer el respaldo de emergencia.', '');
+  }
+}
+
 function showPDFPreview() {
   const rl=resLlenos();
   const linLabel=(LINEAS.find(l=>l.id===S.linea)||{}).label||'—';
@@ -1848,6 +1873,8 @@ function render() {
     '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar respaldo .json</button>' +
     '<button class="sidebar-btn" onclick="importJSON()">' +
     '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 5 17 10"/></svg>Importar respaldo .json</button>' +
+    '<button class="sidebar-btn" onclick="checkEmergencyBackup()" style="color:#92400e">' +
+    '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Revisar respaldo de emergencia</button>' +
     '</div>' +
 
     // ── MAIN CONTENT ─────────────────────────────────────
