@@ -700,6 +700,9 @@ function loadDB() {
         // Use most recent
         if (!ls || (idb.t && ls.t && idb.t > ls.t)) {
           Object.assign(S, idb.data);
+          migrateToMultiObjective(); // re-aplicar migración: IndexedDB puede traer un payload
+                                      // más viejo (sin objetivos_esp poblado) que sobrescribe
+                                      // lo que loadSaved() ya había migrado al inicio.
           render();
         }
       }
