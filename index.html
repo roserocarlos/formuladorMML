@@ -820,15 +820,13 @@ function loadSaved() {
 // solo los reorganiza dentro de objetivos_esp[0].
 // ═══════════════════════════════════════════════════════════════
 function migrateToMultiObjective() {
-  // Si ya tiene la estructura nueva con contenido real, no migrar de nuevo
-  const yaTieneEstructuraNueva =
-    Array.isArray(S.objetivos_esp) &&
-    S.objetivos_esp.length > 0 &&
-    (S.objetivos_esp[0].texto || (S.objetivos_esp[0].resultados||[]).some(r=>r));
+  // Bandera permanente: si ya migramos una vez en la vida de este usuario, JAMÁS
+  // volver a tocar objetivos_esp. ANTES esto se repetía en cada loadDB()/loadSaved(),
+  // y si objetivos_esp[0] quedaba vacío momentáneamente (uso normal), los campos
+  // legacy fantasma (obj_especifico, resultados) volvían a pisarlo o el usuario
+  // veía todo "corrido" hacia el objetivo 2.
+  if (S._migrated_v2) return;
 
-  if (yaTieneEstructuraNueva) return; // nada que migrar, ya está en formato nuevo
-
-  // Asegura que exista el array, por si vino de un guardado muy antiguo
   if (!Array.isArray(S.objetivos_esp) || S.objetivos_esp.length === 0) {
     S.objetivos_esp = [{ id:1, texto:'', resultados:['','','',''],
       iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
@@ -836,21 +834,26 @@ function migrateToMultiObjective() {
   }
 
   const tieneDatosViejos = S.obj_especifico || (S.resultados||[]).some(r=>r);
-  if (!tieneDatosViejos) return; // usuario nuevo, no hay nada que migrar
+  const yaTieneEstructuraNueva =
+    S.objetivos_esp[0].texto || (S.objetivos_esp[0].resultados||[]).some(r=>r) || S.objetivos_esp.length > 1;
 
-  // Vuelca todo el contenido viejo dentro del primer objetivo específico
-  const o = S.objetivos_esp[0];
-  o.texto = S.obj_especifico || '';
-  o.resultados = (S.resultados && S.resultados.length) ? [...S.resultados] : ['','','',''];
-  o.iov = S.iov_proposito ? {...S.iov_proposito} : {ind:'',base:'',meta:'',plazo:''};
-  o.iov_resultados = Array.isArray(S.iov_resultados) ? S.iov_resultados.map(x=>({...x})) : [];
-  o.mv = S.prop_mv || '';
-  o.sup = S.prop_sup || '';
-  o.res_mv = Array.isArray(S.res_mv) ? [...S.res_mv] : [];
-  o.res_sup = Array.isArray(S.res_sup) ? [...S.res_sup] : [];
-  o.actividades_struct = Array.isArray(S.actividades_struct) ? S.actividades_struct.map(a=>[...(a||[])]) : [];
+  if (tieneDatosViejos && !yaTieneEstructuraNueva) {
+    const o = S.objetivos_esp[0];
+    o.texto = S.obj_especifico || '';
+    o.resultados = (S.resultados && S.resultados.length) ? [...S.resultados] : ['','','',''];
+    o.iov = S.iov_proposito ? {...S.iov_proposito} : {ind:'',base:'',meta:'',plazo:''};
+    o.iov_resultados = Array.isArray(S.iov_resultados) ? S.iov_resultados.map(x=>({...x})) : [];
+    o.mv = S.prop_mv || '';
+    o.sup = S.prop_sup || '';
+    o.res_mv = Array.isArray(S.res_mv) ? [...S.res_mv] : [];
+    o.res_sup = Array.isArray(S.res_sup) ? [...S.res_sup] : [];
+    o.actividades_struct = Array.isArray(S.actividades_struct) ? S.actividades_struct.map(a=>[...(a||[])]) : [];
+  }
 
-  scheduleSave(); // persiste la migración de inmediato
+  S.obj_especifico = '';
+  S.resultados = ['','','',''];
+  S._migrated_v2 = true;
+  scheduleSave();
 }
 
 // ── Helpers para trabajar con varios objetivos específicos ──
