@@ -941,68 +941,19 @@ function calcRubroTotal(rb) {
 }
 function pct() { return Math.round(S.completed.length/10*100); }
 // resLlenos() ahora junta los resultados de TODOS los objetivos específicos.
-// Esto mantiene compatibilidad con S6/S7/S8/PDF que ya iteran sobre este array
-// sin necesidad de tocar ese código.
+// Esto mantiene compatibilidad con código que itera "todos los resultados".
 function resLlenos() { return todosLosResultados(); }
 
-// ── Mapeo de índice plano → (objetivo, resultado) ──────────────
-// S6/S7/S8/PDF recorren "todos los resultados" con un índice plano (0,1,2,3...)
-// como si hubiera un solo objetivo específico. Esta función traduce ese índice
-// plano a qué objetivo específico y qué posición dentro de él corresponde,
-// para poder seguir usando S.actividades_struct[i], S.iov_resultados[i], etc.
-// sin reescribir S6/S7/S8 — siguen leyendo/escribiendo en el lugar correcto.
-function mapFlatIndex(flatIdx) {
-  let count = 0;
-  for (let oi = 0; oi < S.objetivos_esp.length; oi++) {
-    const llenos = resLlenosDe(S.objetivos_esp[oi]);
-    if (flatIdx < count + llenos.length) {
-      // posición real dentro de o.resultados (no solo entre los "llenos")
-      const o = S.objetivos_esp[oi];
-      let seen = 0;
-      for (let ri = 0; ri < o.resultados.length; ri++) {
-        if (o.resultados[ri]) {
-          if (seen === flatIdx - count) return { oi, ri };
-          seen++;
-        }
-      }
-    }
-    count += llenos.length;
-  }
-  return { oi: 0, ri: 0 }; // fallback seguro
-}
-function getActividadesStruct(flatIdx) {
-  const {oi, ri} = mapFlatIndex(flatIdx);
-  const o = S.objetivos_esp[oi];
-  if (!o.actividades_struct[ri]) o.actividades_struct[ri] = [];
-  return o.actividades_struct[ri];
-}
-function getIovResultado(flatIdx) {
-  const {oi, ri} = mapFlatIndex(flatIdx);
-  return (S.objetivos_esp[oi].iov_resultados||[])[ri] || {};
-}
-function setIovResultado(flatIdx, field, val) {
-  const {oi, ri} = mapFlatIndex(flatIdx);
-  const o = S.objetivos_esp[oi];
-  if (!o.iov_resultados[ri]) o.iov_resultados[ri] = {};
-  o.iov_resultados[ri][field] = val;
-  scheduleSave(); patchLive();
-}
-function getResMv(flatIdx) { const {oi,ri}=mapFlatIndex(flatIdx); return (S.objetivos_esp[oi].res_mv||[])[ri]||''; }
-function getResSup(flatIdx){ const {oi,ri}=mapFlatIndex(flatIdx); return (S.objetivos_esp[oi].res_sup||[])[ri]||''; }
-// Etiqueta jerárquica real (ej. "R1.2") para un índice plano — usar SIEMPRE en vez de "R"+(i+1),
-// porque el índice plano no coincide con el objetivo específico al que pertenece el resultado.
-function resLabel(flatIdx) {
-  const {oi, ri} = mapFlatIndex(flatIdx);
-  return `R${oi+1}.${ri+1}`;
-}
-function setResMv(flatIdx, val){ const {oi,ri}=mapFlatIndex(flatIdx); const o=S.objetivos_esp[oi]; while(o.res_mv.length<=ri)o.res_mv.push(''); o.res_mv[ri]=val; scheduleSave(); patchLive(); }
-function setResSup(flatIdx, val){ const {oi,ri}=mapFlatIndex(flatIdx); const o=S.objetivos_esp[oi]; while(o.res_sup.length<=ri)o.res_sup.push(''); o.res_sup[ri]=val; scheduleSave(); patchLive(); }
-function setActividad(flatIdx, ai, val){
-  const arr = getActividadesStruct(flatIdx);
-  arr[ai] = val; scheduleSave(); patchLive();
-}
-function addActividad(flatIdx){ getActividadesStruct(flatIdx).push(''); scheduleSave(); render(); }
-function removeActividad(flatIdx, ai){ const arr=getActividadesStruct(flatIdx); arr.splice(ai,1); scheduleSave(); render(); }
+// NOTA HISTÓRICA: anteriormente existía un sistema de "índice plano" (mapFlatIndex)
+// que traducía la posición de un resultado lleno dentro de TODOS los objetivos a un
+// solo número. Se eliminó porque ese índice se recalculaba dinámicamente según cuántos
+// resultados estaban llenos en cada momento — al escribir la primera letra en un
+// resultado vacío, su posición en el índice plano cambiaba a media escritura,
+// reasignando indicadores/actividades/medios al objetivo equivocado.
+// Ahora todo el código (S6, S7, S8, S9, panel en vivo, PDF) itera directamente por
+// posición fija (oi = índice del objetivo, ri = índice del resultado dentro de él),
+// que nunca cambia mientras el usuario escribe.
+
 function showToast(msg, type='', persist=false) {
   const t = document.getElementById('toast');
   t.innerHTML = `<span style="flex:1">${msg}</span>`
@@ -1051,8 +1002,14 @@ function sessionCompleteness() {
     }
     case 7: {
       const propOk = S.objetivos_esp.filter(o=>o.iov.ind && o.iov.base && o.iov.meta && o.iov.plazo).length;
-      const resOk = rl.filter((_,i)=>{const v=getIovResultado(i);return v.ind&&v.base&&v.meta&&v.plazo;}).length;
-      const total = S.objetivos_esp.length + rl.length;
+      let resOk = 0, resTotal = 0;
+      S.objetivos_esp.forEach(o => (o.resultados||[]).forEach((r,ri) => {
+        if (!r) return;
+        resTotal++;
+        const v = (o.iov_resultados[ri])||{};
+        if (v.ind && v.base && v.meta && v.plazo) resOk++;
+      }));
+      const total = S.objetivos_esp.length + resTotal;
       return {filled:propOk+resOk, total:Math.max(total,1), pct:Math.round((propOk+resOk)/Math.max(total,1)*100)};
     }
     case 8: {
@@ -1175,14 +1132,17 @@ function buildMatrixPreview() {
       '</div></div>';
   });
 
-  // RESULTADOS
-  rl.forEach((r,i) => {
-    const iov = getIovResultado(i);
-    html += '<div class="mp-row mp-res">' +
-      '<div class="mp-header">'+resLabel(i)+'</div>' +
-      '<div class="mp-body">' + r +
-      (iov.ind ? '<div class="mp-sub">IOV: '+iov.ind+'</div>' : '') +
-      '</div></div>';
+  // RESULTADOS — iterar por posición fija (objetivo, resultado), no por índice plano dinámico
+  S.objetivos_esp.forEach((o, oi) => {
+    (o.resultados||[]).forEach((r, ri) => {
+      if (!r) return;
+      const iov = (o.iov_resultados[ri]) || {};
+      html += '<div class="mp-row mp-res">' +
+        '<div class="mp-header">R'+(oi+1)+'.'+(ri+1)+'</div>' +
+        '<div class="mp-body">' + r +
+        (iov.ind ? '<div class="mp-sub">IOV: '+iov.ind+'</div>' : '') +
+        '</div></div>';
+    });
   });
 
   // ACTIVIDADES — de todos los objetivos específicos, con numeración jerárquica real
@@ -1434,7 +1394,7 @@ function removeResultadoDe(oIdx, rIdx) {
 function renderS6() {
   const primerTexto = S.objetivos_esp[0].texto;
   const autoOG = primerTexto ? 'Contribuir a '+primerTexto.charAt(0).toLowerCase()+primerTexto.slice(1) : '';
-  const rl = resLlenos();
+  const algunResultado = S.objetivos_esp.some(o => (o.resultados||[]).some(r=>r));
   return card(`Objetivo general (Fin) ${tipBtn('obj_general')}`,
     (autoOG && !S.obj_general ? `<div class="note ok">Sugerencia: <em>${autoOG.substring(0,100)}…</em> <button class="btn sm" onclick="S.obj_general=${JSON.stringify(autoOG)};scheduleSave();patchLive()">Usar</button></div>` : '')
     + '<div class="note info">El objetivo general empieza siempre con <strong>"Contribuir a…"</strong> porque el proyecto solo no puede resolver todo — hace su parte para un cambio más grande en el territorio.</div>'
@@ -1444,29 +1404,33 @@ function renderS6() {
     )
   ) + card(`Actividades por resultado esperado ${tipBtn('actividad')}`,
     `<div class="note info">Cada actividad debe comenzar con un sustantivo que describe la acción: <em>${SUSTANTIVOS_ACT.slice(0,6).join(', ')}…</em> Una actividad va amarrada a un solo resultado — no puede pertenecer a dos al mismo tiempo.</div>`
-    + (rl.length===0 ? '<div class="note warn">Define los resultados esperados en la Sesión 5 primero.</div>' :
-      rl.map((r,ri) => {
-        const acts = getActividadesStruct(ri);
-        if (acts.length===0) acts.push('');
-        const rlbl = resLabel(ri);
-        return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:12px">`
-          + `<div style="background:var(--g1);padding:8px 12px;color:#fff;font-size:12px;font-weight:500">${rlbl}: ${r}</div>`
-          + `<div style="padding:10px 12px">`
-          + acts.map((a,ai) => {
-              const fw2 = (a||'').split(' ')[0];
-              const goodAct = !fw2 || SUSTANTIVOS_ACT.map(s=>s.toLowerCase()).includes(fw2.toLowerCase());
-              return `<div class="act-row"><div class="act-code">A${rlbl.substring(1)}.${ai+1}</div><div style="flex:1">`
-                + `<input type="text" value="${esc(a)}" oninput="setActividad(${ri},${ai},this.value)" placeholder="${SUSTANTIVOS_ACT[ai%SUSTANTIVOS_ACT.length]} de…" style="border-color:${a&&!goodAct?'#fca5a5':''}">`
-                + (a && !goodAct ? `<div class="val-err">⚠ Inicie con sustantivo: ${SUSTANTIVOS_ACT.slice(0,4).join(', ')}…</div>` : '')
-                + `</div>`
-                + (acts.length>1 ? `<button class="btn sm" onclick="removeActividad(${ri},${ai})" style="color:#dc2626;padding:5px 8px">×</button>` : '')
-                + `</div>`;
-            }).join('')
-          + `<button class="btn sm" style="margin-top:6px" onclick="addActividad(${ri})">+ Actividad para ${rlbl}</button>`
-          + `</div>`
-          + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${acts.filter(a=>a).length} actividad(es) → ${rlbl}${acts.filter(a=>a).length===0?' <span style="color:#d97706">⚠ sin actividades</span>':''}</div>`
-          + `</div>`;
-      }).join(''))
+    + (!algunResultado ? '<div class="note warn">Define los resultados esperados en la Sesión 5 primero.</div>' :
+      S.objetivos_esp.map((o, oi) =>
+        (o.resultados||[]).map((r, ri) => {
+          if (!r) return ''; // posición vacía: no tiene actividades aún, se omite visualmente
+          if (!o.actividades_struct[ri]) o.actividades_struct[ri] = [];
+          const acts = o.actividades_struct[ri];
+          if (acts.length===0) acts.push('');
+          const rlbl = `R${oi+1}.${ri+1}`;
+          return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:12px">`
+            + `<div style="background:var(--g1);padding:8px 12px;color:#fff;font-size:12px;font-weight:500">${rlbl}: ${r}</div>`
+            + `<div style="padding:10px 12px">`
+            + acts.map((a,ai) => {
+                const fw2 = (a||'').split(' ')[0];
+                const goodAct = !fw2 || SUSTANTIVOS_ACT.map(s=>s.toLowerCase()).includes(fw2.toLowerCase());
+                return `<div class="act-row"><div class="act-code">A${oi+1}.${ri+1}.${ai+1}</div><div style="flex:1">`
+                  + `<input type="text" value="${esc(a)}" oninput="S.objetivos_esp[${oi}].actividades_struct[${ri}][${ai}]=this.value;scheduleSave();patchLive()" placeholder="${SUSTANTIVOS_ACT[ai%SUSTANTIVOS_ACT.length]} de…" style="border-color:${a&&!goodAct?'#fca5a5':''}">`
+                  + (a && !goodAct ? `<div class="val-err">⚠ Inicie con sustantivo: ${SUSTANTIVOS_ACT.slice(0,4).join(', ')}…</div>` : '')
+                  + `</div>`
+                  + (acts.length>1 ? `<button class="btn sm" onclick="S.objetivos_esp[${oi}].actividades_struct[${ri}].splice(${ai},1);scheduleSave();render()" style="color:#dc2626;padding:5px 8px">×</button>` : '')
+                  + `</div>`;
+              }).join('')
+            + `<button class="btn sm" style="margin-top:6px" onclick="S.objetivos_esp[${oi}].actividades_struct[${ri}]=S.objetivos_esp[${oi}].actividades_struct[${ri}]||[];S.objetivos_esp[${oi}].actividades_struct[${ri}].push('');scheduleSave();render()">+ Actividad para ${rlbl}</button>`
+            + `</div>`
+            + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${acts.filter(a=>a).length} actividad(es) → ${rlbl}${acts.filter(a=>a).length===0?' <span style="color:#d97706">⚠ sin actividades</span>':''}</div>`
+            + `</div>`;
+        }).join('')
+      ).join(''))
   );
 }
 
@@ -1487,31 +1451,39 @@ function renderS7() {
              : '<div style="background:#fef2f2;padding:4px 12px;font-size:10px;color:#dc2626">Completa los 4 campos</div>')
       + `</div>`;
   }
-  // Igual que iovRow, pero para resultados con índice plano (usa setIovResultado, no strings)
-  function iovRowResultado(label, flatIdx) {
-    const iov = getIovResultado(flatIdx);
+  // Igual que iovRow, pero para un resultado en posición fija (oi, ri) — nunca recalcula
+  // su identidad según cuántos resultados están llenos en el momento.
+  function iovRowResultadoFijo(label, oi, ri) {
+    const o = S.objetivos_esp[oi];
+    if (!o.iov_resultados[ri]) o.iov_resultados[ri] = {ind:'',base:'',meta:'',plazo:''};
+    const iov = o.iov_resultados[ri];
     const ok = iov.ind && iov.base && iov.meta && iov.plazo;
+    const kb = `S.objetivos_esp[${oi}].iov_resultados[${ri}]`;
     return `<div style="border:1px solid ${ok?'#86efac':'#fca5a5'};border-radius:var(--r2);overflow:hidden;margin-bottom:10px">`
       + `<div style="background:#15803d;padding:7px 12px;color:#fff;font-size:11px;font-weight:600">${label}</div>`
       + `<div style="padding:10px 12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:8px">`
-      + `<div><div class="lbl">Indicador ${tipBtn('indicador')}</div><textarea rows="2" oninput="setIovResultado(${flatIdx},'ind',this.value)" placeholder="Ej: Al mes 12, al menos 25 de los 30 jóvenes demuestran competencia..." style="min-height:54px">${esc(iov.ind||'')}</textarea></div>`
-      + `<div><div class="lbl">Línea base ${tipBtn('iov_linea_base')}</div><input type="text" value="${esc(iov.base||'')}" oninput="setIovResultado(${flatIdx},'base',this.value)" placeholder="Ej: 0 usuarios al inicio"></div>`
-      + `<div><div class="lbl">Meta</div><input type="text" value="${esc(iov.meta||'')}" oninput="setIovResultado(${flatIdx},'meta',this.value)" placeholder="Ej: 25 de 30"></div>`
-      + `<div><div class="lbl">Plazo</div><input type="text" value="${esc(iov.plazo||'')}" oninput="setIovResultado(${flatIdx},'plazo',this.value)" placeholder="Ej: Mes 12"></div>`
+      + `<div><div class="lbl">Indicador ${tipBtn('indicador')}</div><textarea rows="2" oninput="${kb}.ind=this.value;scheduleSave();patchLive()" placeholder="Ej: Al mes 12, al menos 25 de los 30 jóvenes demuestran competencia..." style="min-height:54px">${esc(iov.ind||'')}</textarea></div>`
+      + `<div><div class="lbl">Línea base ${tipBtn('iov_linea_base')}</div><input type="text" value="${esc(iov.base||'')}" oninput="${kb}.base=this.value;scheduleSave();patchLive()" placeholder="Ej: 0 usuarios al inicio"></div>`
+      + `<div><div class="lbl">Meta</div><input type="text" value="${esc(iov.meta||'')}" oninput="${kb}.meta=this.value;scheduleSave();patchLive()" placeholder="Ej: 25 de 30"></div>`
+      + `<div><div class="lbl">Plazo</div><input type="text" value="${esc(iov.plazo||'')}" oninput="${kb}.plazo=this.value;scheduleSave();patchLive()" placeholder="Ej: Mes 12"></div>`
       + `</div>`
       + (ok ? '<div style="background:var(--g3);padding:4px 12px;font-size:10px;color:var(--g1)">✓ Indicador completo</div>'
              : '<div style="background:#fef2f2;padding:4px 12px;font-size:10px;color:#dc2626">Completa los 4 campos</div>')
       + `</div>`;
   }
   const multiples = S.objetivos_esp.length > 1;
+  const algunResultado = S.objetivos_esp.some(o => (o.resultados||[]).some(r=>r));
   return card(`Indicadores objetivamente verificables (IOV) ${tipBtn('indicador')}`,
     '<div class="note info">Un buen indicador le dice a cualquier persona —sin conocer el proyecto— si se cumplió o no. Debe tener: cuántos, quiénes, en qué plazo y de dónde se parte.</div>'
     + S.objetivos_esp.map((o,oi) => iovRow(
         `OBJ. ESP.${multiples?' '+(oi+1):''} (PROPÓSITO${multiples?' '+(oi+1):''}) — ${(o.texto||'sin definir').substring(0,50)}`,
         '#0f766e', o.iov, `S.objetivos_esp[${oi}].iov`
       )).join('')
-    + (rl.length===0 ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' :
-      rl.map((r,i) => iovRowResultado(`${resLabel(i)}: ${r.substring(0,50)}${r.length>50?'…':''}`, i)).join(''))
+    + (!algunResultado ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' :
+      S.objetivos_esp.map((o,oi) => (o.resultados||[]).map((r,ri) => {
+        if (!r) return '';
+        return iovRowResultadoFijo(`R${oi+1}.${ri+1}: ${r.substring(0,45)}${r.length>45?'…':''}`, oi, ri);
+      }).join('')).join(''))
   );
 }
 
@@ -1527,19 +1499,24 @@ function renderS8() {
       + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="${supKey}=this.value;scheduleSave();patchLive()" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
       + `</div></div>`;
   }
-  // Variante para resultados con índice plano — usa setResMv/setResSup (no strings de key)
-  function mvSupRowResultado(badge, narrative, flatIdx, indHint) {
-    const mvVal = getResMv(flatIdx), supVal = getResSup(flatIdx);
+  // Variante para un resultado en posición fija (oi, ri) — escribe directo en su lugar real,
+  // nunca recalcula su identidad según cuántos resultados están llenos en el momento.
+  function mvSupRowResultadoFijo(badge, narrative, oi, ri, indHint) {
+    const o = S.objetivos_esp[oi];
+    while (o.res_mv.length <= ri) o.res_mv.push('');
+    while (o.res_sup.length <= ri) o.res_sup.push('');
+    const mvVal = o.res_mv[ri], supVal = o.res_sup[ri];
     return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:10px">`
       + `<div style="background:#15803d;padding:7px 12px;color:#fff;font-size:11px;font-weight:600">${badge}</div>`
       + `<div style="padding:8px 12px;font-size:12px;color:var(--ink3);background:var(--bg)">${narrative||'—'}</div>`
       + (indHint ? `<div style="padding:4px 12px;font-size:11px;color:var(--ink3);background:var(--bdr2)">IOV: ${indHint}</div>` : '')
       + `<div style="padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:10px">`
-      + `<div><div class="lbl">Medio de verificación ${tipBtn('medver')}</div><textarea rows="2" oninput="setResMv(${flatIdx},this.value)" placeholder="Ej: Acta de evaluación firmada, registro fotográfico, lista de asistencia con cédulas">${esc(mvVal)}</textarea></div>`
-      + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="setResSup(${flatIdx},this.value)" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
+      + `<div><div class="lbl">Medio de verificación ${tipBtn('medver')}</div><textarea rows="2" oninput="S.objetivos_esp[${oi}].res_mv[${ri}]=this.value;scheduleSave();patchLive()" placeholder="Ej: Acta de evaluación firmada, registro fotográfico, lista de asistencia con cédulas">${esc(mvVal)}</textarea></div>`
+      + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="S.objetivos_esp[${oi}].res_sup[${ri}]=this.value;scheduleSave();patchLive()" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
       + `</div></div>`;
   }
   const multiples = S.objetivos_esp.length > 1;
+  const algunResultado = S.objetivos_esp.some(o => (o.resultados||[]).some(r=>r));
   return card(`Medios de verificación y supuestos ${tipBtn('medver')}`,
     '<div class="note info">El medio de verificación es el documento o registro donde alguien puede comprobar que el resultado se logró — no puede ser solo la palabra del equipo. El supuesto es una condición externa que el proyecto no controla pero que necesita que se cumpla.</div>'
     + mvSupRow('#1d4ed8','FIN — Objetivo general', S.obj_general, S.fin_mv,'S.fin_mv', S.fin_sup,'S.fin_sup', S.fin_ind)
@@ -1548,8 +1525,12 @@ function renderS8() {
         o.mv||'', `S.objetivos_esp[${oi}].mv`,
         o.sup||'', `S.objetivos_esp[${oi}].sup`,
         o.iov.ind)).join('')
-    + (rl.length===0 ? '<div class="note warn">Define resultados en S5.</div>' :
-      rl.map((r,i) => mvSupRowResultado(`${resLabel(i)}: ${r.substring(0,40)}…`, r, i, getIovResultado(i).ind)).join(''))
+    + (!algunResultado ? '<div class="note warn">Define resultados en S5.</div>' :
+      S.objetivos_esp.map((o,oi) => (o.resultados||[]).map((r,ri) => {
+        if (!r) return '';
+        const indHint = (o.iov_resultados[ri]||{}).ind;
+        return mvSupRowResultadoFijo(`R${oi+1}.${ri+1}: ${r.substring(0,35)}…`, r, oi, ri, indHint);
+      }).join('')).join(''))
   ) + card(`Precondiciones ${tipBtn('precondicion')}`,
     '<div class="note info">Son las condiciones que deben estar listas antes de que el proyecto empiece. Sin esto, no hay forma de arrancar.</div>'
     + field('Precondiciones', `<textarea oninput="S.precondiciones=this.value;scheduleSave();patchLive()" placeholder="Ej: El equipo cuenta con la convocatoria formalizada; aliados han firmado compromisos…">${esc(S.precondiciones)}</textarea>`)
@@ -1765,7 +1746,7 @@ function showPDFPreview() {
     '<h2>3. Objetivos</h2>'+
     '<table class="pdf-table"><tr><td style="font-weight:600;width:30%">Objetivo general</td><td>'+esc(S.obj_general||'—')+'</td></tr>'+
     S.objetivos_esp.map((o,oi)=>'<tr><td style="font-weight:600">Objetivo específico'+(S.objetivos_esp.length>1?' '+(oi+1):'')+'</td><td>'+esc(o.texto||'—')+'</td></tr>').join('')+
-    rl.map((r,i)=>'<tr><td style="font-weight:600">'+resLabel(i)+'</td><td>'+esc(r)+'</td></tr>').join('')+
+    S.objetivos_esp.map((o,oi)=>(o.resultados||[]).map((r,ri)=>r?('<tr><td style="font-weight:600">R'+(oi+1)+'.'+(ri+1)+'</td><td>'+esc(r)+'</td></tr>'):'').join('')).join('')+
     '</table>'+
     '<h2>4. Matriz de Marco Lógico</h2>'+
     '<div class="mml-wrap"><table class="mml-table">'+
@@ -1776,11 +1757,13 @@ function showPDFPreview() {
       '<td>'+esc(o.iov.ind||'—')+'<br><small>Base: '+esc(o.iov.base||'—')+' → Meta: '+esc(o.iov.meta||'—')+' → '+esc(o.iov.plazo||'—')+'</small></td>'+
       '<td>'+esc(o.mv||'—')+'</td><td>'+esc(o.sup||'—')+'</td></tr>'
     ).join('')+
-    rl.map((r,i)=>{const iov=getIovResultado(i);
-      return '<tr class="row-res"><td><span class="mml-lbl">'+resLabel(i)+'</span>'+esc(r)+'</td>'+
+    S.objetivos_esp.map((o,oi)=>(o.resultados||[]).map((r,ri)=>{
+      if (!r) return '';
+      const iov=(o.iov_resultados[ri])||{};
+      return '<tr class="row-res"><td><span class="mml-lbl">R'+(oi+1)+'.'+(ri+1)+'</span>'+esc(r)+'</td>'+
       '<td>'+esc(iov.ind||'—')+'<br><small>Base: '+esc(iov.base||'—')+' → '+esc(iov.meta||'—')+' → '+esc(iov.plazo||'—')+'</small></td>'+
-      '<td>'+esc(getResMv(i)||'—')+'</td><td>'+esc(getResSup(i)||'—')+'</td></tr>';
-    }).join('')+
+      '<td>'+esc((o.res_mv||[])[ri]||'—')+'</td><td>'+esc((o.res_sup||[])[ri]||'—')+'</td></tr>';
+    }).join('')).join('')+
     '<tr class="row-act"><td><span class="mml-lbl">ACTIVIDADES</span>'+
     S.objetivos_esp.flatMap((o,oi)=>(o.actividades_struct||[]).flatMap((arr,ri)=>(arr||[]).filter(a=>a).map((a,ai)=>'A'+(oi+1)+'.'+(ri+1)+'.'+(ai+1)+': '+esc(a)))).join('<br>')+
     '</td><td colspan="2" style="font-size:10px;color:var(--ink3)">Sin indicadores de actividad en la MML</td><td>—</td></tr>'+
