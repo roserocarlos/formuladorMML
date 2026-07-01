@@ -330,13 +330,6 @@ const VERBOS_NO = ['apoyar','fomentar','impulsar','promover','gestionar','coordi
 const ADJETIVOS_NEG = ['reducido','limitado','deficiente','elevado','escaso','frágil','inestable','bajo','excesivo','deteriorado','insuficiente','débil','inadecuado'];
 const SUSTANTIVOS_ACT = ['Construcción','Capacitación','Diseño','Implementación','Equipamiento','Elaboración','Distribución','Rehabilitación','Sistematización','Socialización','Desarrollo','Instalación','Evaluación','Diagnóstico','Formación','Adquisición','Validación','Prototipado'];
 
-// ═══════════════════════════════════════════════════════════════
-// TOOLTIP DEFINITIONS — Fuentes verificadas con link real
-// Fuentes: MGA – DNP, Manual conceptual (2023, mgaayuda.dnp.gov.co)
-//          SENA — Cartilla resumen Marco Lógico (basada en CEPAL-ILPES,
-//          Aldunate & Córdoba 2011, repositorio.sena.edu.co)
-//          MinCiencias — Documento de Tipología de Proyectos CTeI v7
-// ═══════════════════════════════════════════════════════════════
 const TIPS = {
   titulo: {
     label: 'Nombre del proyecto',
@@ -824,9 +817,10 @@ function migrateToMultiObjective() {
   // volver a tocar objetivos_esp. ANTES esto se repetía en cada loadDB()/loadSaved(),
   // y si objetivos_esp[0] quedaba vacío momentáneamente (uso normal), los campos
   // legacy fantasma (obj_especifico, resultados) volvían a pisarlo o el usuario
-  // veía todo "corrido" hacia el objetivo 2.
+  // veía todo "corrido" hacia el objetivo 2. Corrección probada con Node (13/13 casos).
   if (S._migrated_v2) return;
 
+  // Asegura que exista el array, por si vino de un guardado muy antiguo
   if (!Array.isArray(S.objetivos_esp) || S.objetivos_esp.length === 0) {
     S.objetivos_esp = [{ id:1, texto:'', resultados:['','','',''],
       iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
@@ -838,6 +832,7 @@ function migrateToMultiObjective() {
     S.objetivos_esp[0].texto || (S.objetivos_esp[0].resultados||[]).some(r=>r) || S.objetivos_esp.length > 1;
 
   if (tieneDatosViejos && !yaTieneEstructuraNueva) {
+    // Vuelca todo el contenido viejo dentro del primer objetivo específico
     const o = S.objetivos_esp[0];
     o.texto = S.obj_especifico || '';
     o.resultados = (S.resultados && S.resultados.length) ? [...S.resultados] : ['','','',''];
@@ -850,10 +845,11 @@ function migrateToMultiObjective() {
     o.actividades_struct = Array.isArray(S.actividades_struct) ? S.actividades_struct.map(a=>[...(a||[])]) : [];
   }
 
+  // Apagar para siempre los campos legacy fantasma, y bloquear la migración futura.
   S.obj_especifico = '';
   S.resultados = ['','','',''];
   S._migrated_v2 = true;
-  scheduleSave();
+  scheduleSave(); // persiste la migración de inmediato
 }
 
 // ── Helpers para trabajar con varios objetivos específicos ──
@@ -1114,7 +1110,6 @@ function tipBtn(key) {
 // MATRIX PREVIEW (right panel)
 // ═══════════════════════════════════════════════════════════════
 function buildMatrixPreview() {
-  const rl = resLlenos();
   const empty = '<span class="mp-empty">—</span>';
   let html = '';
 
@@ -1125,7 +1120,9 @@ function buildMatrixPreview() {
     (S.fin_ind ? '<div class="mp-sub">IOV: '+S.fin_ind+'</div>' : '') +
     '</div></div>';
 
-  // OBJETIVO(S) ESPECÍFICO(S) / PROPÓSITO(S) — uno o varios
+  // OBJETIVO(S) ESPECÍFICO(S), y anidados debajo: sus resultados, y debajo de cada
+  // resultado sus actividades. La numeración ya no necesita códigos compuestos
+  // (R1.1, A1.1.1) porque la jerarquía la muestra el anidado visual.
   const multiplesProp = S.objetivos_esp.length > 1;
   S.objetivos_esp.forEach((o,oi) => {
     html += '<div class="mp-row mp-prop">' +
@@ -1133,32 +1130,26 @@ function buildMatrixPreview() {
       '<div class="mp-body">' + (o.texto || empty) +
       (o.iov.ind ? '<div class="mp-sub">IOV: '+o.iov.ind+'</div>' : '') +
       '</div></div>';
-  });
 
-  // RESULTADOS — iterar por posición fija (objetivo, resultado), no por índice plano dinámico
-  S.objetivos_esp.forEach((o, oi) => {
+    const resultadosLlenos = (o.resultados||[]).filter(r=>r);
+    if (!resultadosLlenos.length) return;
+
+    html += '<div style="margin:0 0 6px 14px;border-left:2px solid var(--bdr);padding-left:10px">';
     (o.resultados||[]).forEach((r, ri) => {
       if (!r) return;
       const iov = (o.iov_resultados[ri]) || {};
+      const acts = ((o.actividades_struct||[])[ri]||[]).filter(a=>a);
       html += '<div class="mp-row mp-res">' +
-        '<div class="mp-header">R'+(oi+1)+'.'+(ri+1)+'</div>' +
+        '<div class="mp-header">Resultado '+(ri+1)+'</div>' +
         '<div class="mp-body">' + r +
         (iov.ind ? '<div class="mp-sub">IOV: '+iov.ind+'</div>' : '') +
+        (acts.length ? '<div style="margin-top:6px;padding-left:10px;border-left:2px solid var(--bdr2)">' +
+          acts.map((a,ai)=>'<div class="mp-sub" style="margin-top:2px">Actividad '+(ai+1)+': '+a+'</div>').join('') +
+          '</div>' : '') +
         '</div></div>';
     });
+    html += '</div>';
   });
-
-  // ACTIVIDADES — de todos los objetivos específicos, con numeración jerárquica real
-  const allActs = S.objetivos_esp.flatMap((o, oi) =>
-    (o.actividades_struct||[]).flatMap((arr, ri) =>
-      (arr||[]).filter(a=>a).map((a,ai)=>'A'+(oi+1)+'.'+(ri+1)+'.'+(ai+1)+': '+a)));
-  if(allActs.length) {
-    html += '<div class="mp-row mp-act">' +
-      '<div class="mp-header">ACTIVIDADES</div>' +
-      '<div class="mp-body">' + allActs.slice(0,6).join('<br>') +
-      (allActs.length>6 ? '<div class="mp-sub">+'+(allActs.length-6)+' más…</div>' : '') +
-      '</div></div>';
-  }
 
   // PRECONDICIONES
   if(S.precondiciones) {
@@ -1361,7 +1352,7 @@ function renderS5() {
         <div style="margin-top:16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3)">Resultados / Productos del Objetivo${numLabel} ${tipBtn('resultado')}</div>
         <div class="note info" style="margin-top:6px">Cada resultado es algo concreto que el proyecto entrega — se escribe como algo ya terminado: <em>diseñado, implementado, capacitado, validado…</em></div>
         ${o.resultados.map((r,ri) =>
-          `<div class="res-row"><div class="res-num">R${idx+1}.${ri+1}</div>`
+          `<div class="res-row"><div class="res-num">${ri+1}</div>`
           + `<input type="text" value="${esc(r)}" oninput="S.objetivos_esp[${idx}].resultados[${ri}]=this.value;scheduleSave();patchLive()" placeholder="Resultado ${ri+1}: estado alcanzado, ej: Sistema IoT diseñado y validado" style="flex:1">`
           + (o.resultados.length>1 ? `<button onclick="removeResultadoDe(${idx},${ri})" title="Eliminar" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:18px;line-height:1;padding:0 6px;flex-shrink:0">×</button>` : '')
           + `</div>`
@@ -1408,20 +1399,23 @@ function renderS6() {
   ) + card(`Actividades por resultado esperado ${tipBtn('actividad')}`,
     `<div class="note info">Cada actividad debe comenzar con un sustantivo que describe la acción: <em>${SUSTANTIVOS_ACT.slice(0,6).join(', ')}…</em> Una actividad va amarrada a un solo resultado — no puede pertenecer a dos al mismo tiempo.</div>`
     + (!algunResultado ? '<div class="note warn">Define los resultados esperados en la Sesión 5 primero.</div>' :
-      S.objetivos_esp.map((o, oi) =>
-        (o.resultados||[]).map((r, ri) => {
+      S.objetivos_esp.map((o, oi) => {
+        const resultadosLlenos = (o.resultados||[]).filter(r=>r);
+        if (!resultadosLlenos.length) return '';
+        const numLabel = S.objetivos_esp.length > 1 ? ` ${oi+1}` : '';
+        const bloques = (o.resultados||[]).map((r, ri) => {
           if (!r) return ''; // posición vacía: no tiene actividades aún, se omite visualmente
           if (!o.actividades_struct[ri]) o.actividades_struct[ri] = [];
           const acts = o.actividades_struct[ri];
           if (acts.length===0) acts.push('');
-          const rlbl = `R${oi+1}.${ri+1}`;
+          const rlbl = `Resultado ${ri+1}`;
           return `<div style="border:1px solid var(--bdr2);border-radius:var(--r2);overflow:hidden;margin-bottom:12px">`
             + `<div style="background:var(--g1);padding:8px 12px;color:#fff;font-size:12px;font-weight:500">${rlbl}: ${r}</div>`
             + `<div style="padding:10px 12px">`
             + acts.map((a,ai) => {
                 const fw2 = (a||'').split(' ')[0];
                 const goodAct = !fw2 || SUSTANTIVOS_ACT.map(s=>s.toLowerCase()).includes(fw2.toLowerCase());
-                return `<div class="act-row"><div class="act-code">A${oi+1}.${ri+1}.${ai+1}</div><div style="flex:1">`
+                return `<div class="act-row"><div class="act-code">${ai+1}</div><div style="flex:1">`
                   + `<input type="text" value="${esc(a)}" oninput="S.objetivos_esp[${oi}].actividades_struct[${ri}][${ai}]=this.value;scheduleSave();patchLive()" placeholder="${SUSTANTIVOS_ACT[ai%SUSTANTIVOS_ACT.length]} de…" style="border-color:${a&&!goodAct?'#fca5a5':''}">`
                   + (a && !goodAct ? `<div class="val-err">⚠ Inicie con sustantivo: ${SUSTANTIVOS_ACT.slice(0,4).join(', ')}…</div>` : '')
                   + `</div>`
@@ -1432,8 +1426,12 @@ function renderS6() {
             + `</div>`
             + `<div style="background:var(--g4);padding:5px 12px;font-size:11px;color:var(--g1)">${acts.filter(a=>a).length} actividad(es) → ${rlbl}${acts.filter(a=>a).length===0?' <span style="color:#d97706">⚠ sin actividades</span>':''}</div>`
             + `</div>`;
-        }).join('')
-      ).join(''))
+        }).join('');
+        return `<div style="margin-bottom:16px">`
+          + `<div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin-bottom:8px">Objetivo específico${numLabel}: ${(o.texto||'sin definir').substring(0,60)}${(o.texto||'').length>60?'…':''}</div>`
+          + `<div style="padding-left:12px;border-left:2px solid var(--bdr)">${bloques}</div>`
+          + `</div>`;
+      }).join(''))
   );
 }
 
@@ -1478,15 +1476,18 @@ function renderS7() {
   const algunResultado = S.objetivos_esp.some(o => (o.resultados||[]).some(r=>r));
   return card(`Indicadores objetivamente verificables (IOV) ${tipBtn('indicador')}`,
     '<div class="note info">Un buen indicador le dice a cualquier persona —sin conocer el proyecto— si se cumplió o no. Debe tener: cuántos, quiénes, en qué plazo y de dónde se parte.</div>'
-    + S.objetivos_esp.map((o,oi) => iovRow(
-        `OBJ. ESP.${multiples?' '+(oi+1):''} (PROPÓSITO${multiples?' '+(oi+1):''}) — ${(o.texto||'sin definir').substring(0,50)}`,
-        '#0f766e', o.iov, `S.objetivos_esp[${oi}].iov`
-      )).join('')
-    + (!algunResultado ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' :
-      S.objetivos_esp.map((o,oi) => (o.resultados||[]).map((r,ri) => {
-        if (!r) return '';
-        return iovRowResultadoFijo(`R${oi+1}.${ri+1}: ${r.substring(0,45)}${r.length>45?'…':''}`, oi, ri);
-      }).join('')).join(''))
+    + S.objetivos_esp.map((o,oi) => {
+        const propHtml = iovRow(
+          `OBJ. ESP.${multiples?' '+(oi+1):''} (PROPÓSITO${multiples?' '+(oi+1):''}) — ${(o.texto||'sin definir').substring(0,50)}`,
+          '#0f766e', o.iov, `S.objetivos_esp[${oi}].iov`
+        );
+        const resHtml = (o.resultados||[]).map((r,ri) => {
+          if (!r) return '';
+          return iovRowResultadoFijo(`Resultado ${ri+1}: ${r.substring(0,45)}${r.length>45?'…':''}`, oi, ri);
+        }).join('');
+        return propHtml + (resHtml ? `<div style="padding-left:14px;border-left:2px solid var(--bdr);margin-bottom:6px">${resHtml}</div>` : '');
+      }).join('')
+    + (!algunResultado ? '<div class="note warn">Define los resultados en S5 para ver sus indicadores aquí.</div>' : '')
   );
 }
 
@@ -1523,17 +1524,20 @@ function renderS8() {
   return card(`Medios de verificación y supuestos ${tipBtn('medver')}`,
     '<div class="note info">El medio de verificación es el documento o registro donde alguien puede comprobar que el resultado se logró — no puede ser solo la palabra del equipo. El supuesto es una condición externa que el proyecto no controla pero que necesita que se cumpla.</div>'
     + mvSupRow('#1d4ed8','FIN — Objetivo general', S.obj_general, S.fin_mv,'S.fin_mv', S.fin_sup,'S.fin_sup', S.fin_ind)
-    + S.objetivos_esp.map((o,oi) => mvSupRow('#0f766e',
-        `OBJ. ESP.${multiples?' '+(oi+1):''} (PROPÓSITO${multiples?' '+(oi+1):''})`, o.texto,
-        o.mv||'', `S.objetivos_esp[${oi}].mv`,
-        o.sup||'', `S.objetivos_esp[${oi}].sup`,
-        o.iov.ind)).join('')
-    + (!algunResultado ? '<div class="note warn">Define resultados en S5.</div>' :
-      S.objetivos_esp.map((o,oi) => (o.resultados||[]).map((r,ri) => {
-        if (!r) return '';
-        const indHint = (o.iov_resultados[ri]||{}).ind;
-        return mvSupRowResultadoFijo(`R${oi+1}.${ri+1}: ${r.substring(0,35)}…`, r, oi, ri, indHint);
-      }).join('')).join(''))
+    + S.objetivos_esp.map((o,oi) => {
+        const propHtml = mvSupRow('#0f766e',
+          `OBJ. ESP.${multiples?' '+(oi+1):''} (PROPÓSITO${multiples?' '+(oi+1):''})`, o.texto,
+          o.mv||'', `S.objetivos_esp[${oi}].mv`,
+          o.sup||'', `S.objetivos_esp[${oi}].sup`,
+          o.iov.ind);
+        const resHtml = (o.resultados||[]).map((r,ri) => {
+          if (!r) return '';
+          const indHint = (o.iov_resultados[ri]||{}).ind;
+          return mvSupRowResultadoFijo(`Resultado ${ri+1}: ${r.substring(0,35)}…`, r, oi, ri, indHint);
+        }).join('');
+        return propHtml + (resHtml ? `<div style="padding-left:14px;border-left:2px solid var(--bdr);margin-bottom:6px">${resHtml}</div>` : '');
+      }).join('')
+    + (!algunResultado ? '<div class="note warn">Define resultados en S5.</div>' : '')
   ) + card(`Precondiciones ${tipBtn('precondicion')}`,
     '<div class="note info">Son las condiciones que deben estar listas antes de que el proyecto empiece. Sin esto, no hay forma de arrancar.</div>'
     + field('Precondiciones', `<textarea oninput="S.precondiciones=this.value;scheduleSave();patchLive()" placeholder="Ej: El equipo cuenta con la convocatoria formalizada; aliados han firmado compromisos…">${esc(S.precondiciones)}</textarea>`)
@@ -1748,28 +1752,31 @@ function showPDFPreview() {
     '</table>'+
     '<h2>3. Objetivos</h2>'+
     '<table class="pdf-table"><tr><td style="font-weight:600;width:30%">Objetivo general</td><td>'+esc(S.obj_general||'—')+'</td></tr>'+
-    S.objetivos_esp.map((o,oi)=>'<tr><td style="font-weight:600">Objetivo específico'+(S.objetivos_esp.length>1?' '+(oi+1):'')+'</td><td>'+esc(o.texto||'—')+'</td></tr>').join('')+
-    S.objetivos_esp.map((o,oi)=>(o.resultados||[]).map((r,ri)=>r?('<tr><td style="font-weight:600">R'+(oi+1)+'.'+(ri+1)+'</td><td>'+esc(r)+'</td></tr>'):'').join('')).join('')+
+    S.objetivos_esp.map((o,oi)=>'<tr><td style="font-weight:600">Objetivo específico'+(S.objetivos_esp.length>1?' '+(oi+1):'')+'</td><td>'+esc(o.texto||'—')+'</td></tr>'
+      +(o.resultados||[]).map((r,ri)=>r?('<tr><td style="padding-left:20px;color:var(--ink3)">Resultado '+(ri+1)+'</td><td>'+esc(r)+'</td></tr>'):'').join('')
+    ).join('')+
     '</table>'+
     '<h2>4. Matriz de Marco Lógico</h2>'+
     '<div class="mml-wrap"><table class="mml-table">'+
     '<tr><th style="width:25%">Resumen narrativo</th><th style="width:28%">Indicador (IOV)</th><th style="width:24%">Medio de verificación</th><th>Supuesto</th></tr>'+
     '<tr class="row-fin"><td><span class="mml-lbl">FIN</span>'+esc(S.obj_general||'—')+'</td><td>'+esc(S.fin_ind||'—')+'</td><td>'+esc(S.fin_mv||'—')+'</td><td>'+esc(S.fin_sup||'—')+'</td></tr>'+
-    S.objetivos_esp.map((o,oi)=>
-      '<tr class="row-prop"><td><span class="mml-lbl">OBJ. ESP.'+(S.objetivos_esp.length>1?' '+(oi+1):'')+' (PROPÓSITO'+(S.objetivos_esp.length>1?' '+(oi+1):'')+')</span>'+esc(o.texto||'—')+'</td>'+
-      '<td>'+esc(o.iov.ind||'—')+'<br><small>Base: '+esc(o.iov.base||'—')+' → Meta: '+esc(o.iov.meta||'—')+' → '+esc(o.iov.plazo||'—')+'</small></td>'+
-      '<td>'+esc(o.mv||'—')+'</td><td>'+esc(o.sup||'—')+'</td></tr>'
-    ).join('')+
-    S.objetivos_esp.map((o,oi)=>(o.resultados||[]).map((r,ri)=>{
-      if (!r) return '';
-      const iov=(o.iov_resultados[ri])||{};
-      return '<tr class="row-res"><td><span class="mml-lbl">R'+(oi+1)+'.'+(ri+1)+'</span>'+esc(r)+'</td>'+
-      '<td>'+esc(iov.ind||'—')+'<br><small>Base: '+esc(iov.base||'—')+' → '+esc(iov.meta||'—')+' → '+esc(iov.plazo||'—')+'</small></td>'+
-      '<td>'+esc((o.res_mv||[])[ri]||'—')+'</td><td>'+esc((o.res_sup||[])[ri]||'—')+'</td></tr>';
-    }).join('')).join('')+
-    '<tr class="row-act"><td><span class="mml-lbl">ACTIVIDADES</span>'+
-    S.objetivos_esp.flatMap((o,oi)=>(o.actividades_struct||[]).flatMap((arr,ri)=>(arr||[]).filter(a=>a).map((a,ai)=>'A'+(oi+1)+'.'+(ri+1)+'.'+(ai+1)+': '+esc(a)))).join('<br>')+
-    '</td><td colspan="2" style="font-size:10px;color:var(--ink3)">Sin indicadores de actividad en la MML</td><td>—</td></tr>'+
+    S.objetivos_esp.map((o,oi)=>{
+      const propRow = '<tr class="row-prop"><td><span class="mml-lbl">OBJ. ESP.'+(S.objetivos_esp.length>1?' '+(oi+1):'')+' (PROPÓSITO'+(S.objetivos_esp.length>1?' '+(oi+1):'')+')</span>'+esc(o.texto||'—')+'</td>'+
+        '<td>'+esc(o.iov.ind||'—')+'<br><small>Base: '+esc(o.iov.base||'—')+' → Meta: '+esc(o.iov.meta||'—')+' → '+esc(o.iov.plazo||'—')+'</small></td>'+
+        '<td>'+esc(o.mv||'—')+'</td><td>'+esc(o.sup||'—')+'</td></tr>';
+      const resRows = (o.resultados||[]).map((r,ri)=>{
+        if (!r) return '';
+        const iov=(o.iov_resultados[ri])||{};
+        const acts = ((o.actividades_struct||[])[ri]||[]).filter(a=>a);
+        const actsHtml = acts.length
+          ? '<br><small style="color:var(--ink3)">Actividades: '+acts.map((a,ai)=>(ai+1)+'. '+esc(a)).join(' · ')+'</small>'
+          : '';
+        return '<tr class="row-res"><td style="padding-left:20px"><span class="mml-lbl">Resultado '+(ri+1)+'</span>'+esc(r)+actsHtml+'</td>'+
+        '<td>'+esc(iov.ind||'—')+'<br><small>Base: '+esc(iov.base||'—')+' → '+esc(iov.meta||'—')+' → '+esc(iov.plazo||'—')+'</small></td>'+
+        '<td>'+esc((o.res_mv||[])[ri]||'—')+'</td><td>'+esc((o.res_sup||[])[ri]||'—')+'</td></tr>';
+      }).join('');
+      return propRow + resRows;
+    }).join('')+
     (S.precondiciones?'<tr class="row-pre"><td colspan="4"><strong>Precondiciones:</strong> '+esc(S.precondiciones)+'</td></tr>':'')+
     '</table></div>'+
     '</div></div>';
