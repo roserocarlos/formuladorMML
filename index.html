@@ -7,9 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-/* ── Reset ── */
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
   --g1:#1a5c38;--g2:#2d7a4f;--g3:#e8f5ee;--g4:#f4faf7;
@@ -24,8 +24,6 @@
   --font-d:'Fraunces',Georgia,serif;
 }
 body{font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg);min-height:100vh}
-
-/* ── Layout ── */
 .app{display:grid;grid-template-rows:56px 1fr;height:100vh;overflow:hidden}
 .topbar{background:var(--g1);display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:50}
 .topbar-brand{font-family:var(--font-d);font-size:16px;color:#fff;font-weight:700}
@@ -36,10 +34,7 @@ body{font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg
 .save-dot.saving{background:#fbbf24;animation:pulse 1s infinite}
 .save-dot.saved{background:#6ee7b7}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
 .body{display:grid;grid-template-columns:200px 1fr 320px;height:calc(100vh - 56px);overflow:hidden}
-
-/* ── Sidebar ── */
 .sidebar{background:var(--white);border-right:1px solid var(--bdr2);overflow-y:auto;padding:12px 0}
 .sidebar-section{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);padding:8px 14px 4px}
 .nav-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;border-left:2px solid transparent;transition:all .15s;font-size:12px;color:var(--ink2)}
@@ -54,8 +49,6 @@ body{font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg
 .sidebar-btn:hover{background:var(--g4);color:var(--g1)}
 .sidebar-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .sidebar-divider{height:1px;background:var(--bdr2);margin:8px 0}
-
-/* ── Main content ── */
 .main{overflow-y:auto;padding:20px}
 .main-inner{max-width:680px;margin:0 auto}
 .session-header{margin-bottom:18px}
@@ -64,12 +57,8 @@ body{font-family:var(--font);font-size:14px;color:var(--ink);background:var(--bg
 .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
 .badge-s{background:var(--g3);color:var(--g1);margin-bottom:6px}
 .badge-sec{background:var(--b3);color:var(--b1);margin-bottom:6px;margin-left:4px}
-
-/* ── Cards ── */
 .card{background:var(--white);border:1px solid var(--bdr2);border-radius:var(--r3);padding:18px;margin-bottom:14px;box-shadow:var(--sh)}
 .card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-bottom:14px;display:flex;align-items:center;gap:6px}
-
-/* ── Form ── */
 .field{margin-bottom:14px;position:relative}
 .field-row{display:grid;gap:10px;margin-bottom:14px}
 .field-row.cols2{grid-template-columns:1fr 1fr}
@@ -83,8 +72,6 @@ input[type=text],input[type=number],input[type=email],textarea,select{
 }
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--g2);background:var(--white)}
 textarea{min-height:72px;line-height:1.6}
-
-/* ── Tooltip ── */
 .tip-btn{width:18px;height:18px;border-radius:50%;background:var(--b2);color:#fff;font-size:10px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1}
 .tip-btn:hover{background:var(--b1)}
 .tooltip-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.45)}
@@ -101,15 +88,11 @@ textarea{min-height:72px;line-height:1.6}
 .tip-section p.ok{background:var(--g3);border-left:3px solid var(--g1)}
 .tip-section p.bad{background:#fef2f2;border-left:3px solid #dc2626}
 .tip-close{margin-top:14px;width:100%;padding:9px;background:var(--g1);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font)}
-
-/* ── Note boxes ── */
 .note{padding:9px 12px;border-radius:0 var(--r) var(--r) 0;font-size:12px;line-height:1.6;margin-bottom:12px}
 .note.info{background:var(--g4);border-left:3px solid var(--g2);color:var(--ink2)}
 .note.warn{background:var(--a2);border-left:3px solid #d97706;color:var(--a1)}
 .note.ok{background:var(--g3);border-left:3px solid var(--g1);color:var(--g1);font-weight:500}
 .note.err{background:#fef2f2;border-left:3px solid #dc2626;color:#dc2626}
-
-/* ── Tree ── */
 .tree-wrap{overflow-x:auto}
 .tree-level{margin-bottom:4px}
 .tree-level-label{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 10px;border-radius:20px;margin-bottom:6px}
@@ -123,8 +106,6 @@ textarea{min-height:72px;line-height:1.6}
 .connector-h{position:relative;height:16px;margin-bottom:4px}
 .connector-h::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:var(--bdr)}
 .connector-h::after{content:'';position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--bdr)}
-
-/* color schemes for tree levels */
 .lvl-fi2{background:#eff6ff;border-color:#93c5fd}.lvl-fi2 .box-label{color:#1d4ed8}
 .lvl-fi1{background:#dbeafe;border-color:#60a5fa}.lvl-fi1 .box-label{color:#1e3a5f}
 .lvl-central{background:var(--g1);border-color:var(--g1)}.lvl-central .box-label{color:rgba(255,255,255,.7)}.lvl-central textarea{color:#fff;font-weight:500}
@@ -133,8 +114,6 @@ textarea{min-height:72px;line-height:1.6}
 .lvl-obj{background:var(--g3);border-color:#86efac}.lvl-obj .box-label{color:var(--g1)}
 .lvl-med1{background:#dcfce7;border-color:#4ade80}.lvl-med1 .box-label{color:#15803d}
 .lvl-med2{background:#f0fdf4;border-color:#86efac}.lvl-med2 .box-label{color:#166534}
-
-/* ── MML Matrix ── */
 .mml-wrap{overflow-x:auto}
 .mml-table{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
 .mml-table th{background:var(--g1);color:#fff;padding:9px 10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:left;border:1px solid rgba(255,255,255,.2)}
@@ -145,8 +124,6 @@ textarea{min-height:72px;line-height:1.6}
 .mml-table .row-res td{background:var(--white)}
 .mml-table .row-act td{background:var(--bg)}
 .mml-table .row-pre td{background:var(--a2)}
-
-/* ── Chips / multiselect ── */
 .chip-group{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px}
 .chip{padding:4px 11px;border-radius:20px;border:1px solid var(--bdr);font-size:12px;cursor:pointer;background:var(--white);color:var(--ink2);transition:all .12s;font-family:var(--font)}
 .chip:hover{border-color:var(--g2);color:var(--g1)}
@@ -154,8 +131,6 @@ textarea{min-height:72px;line-height:1.6}
 .muni-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:3px;margin-top:5px}
 .muni-chip{padding:4px 7px;border-radius:6px;border:1px solid var(--bdr);font-size:11px;cursor:pointer;background:var(--white);color:var(--ink2);text-align:center;transition:all .1s}
 .muni-chip.sel{background:var(--g3);color:var(--g1);border-color:var(--g2)}
-
-/* ── Right panel — live matrix ── */
 .panel{background:var(--white);border-left:1px solid var(--bdr2);overflow-y:auto;padding:14px}
 .panel-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .matrix-preview{font-size:11px}
@@ -169,8 +144,6 @@ textarea{min-height:72px;line-height:1.6}
 .mp-res .mp-header{background:#15803d}
 .mp-act .mp-header{background:var(--ink2)}
 .mp-pre .mp-header{background:#92400e}
-
-/* ── Buttons ── */
 .btn{padding:8px 16px;border-radius:var(--r);border:1px solid var(--bdr);background:var(--white);color:var(--ink);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:5px}
 .btn:hover{background:var(--bg)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
@@ -179,61 +152,41 @@ textarea{min-height:72px;line-height:1.6}
 .btn.sm{padding:5px 11px;font-size:12px;border-radius:6px}
 .btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .nav-footer{display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--bdr2);margin-top:4px}
-
-/* ── Result rows ── */
 .res-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
 .res-num{width:26px;height:26px;border-radius:50%;background:var(--g3);color:var(--g1);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:4px}
 .act-row{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
 .act-code{min-width:36px;font-size:11px;font-weight:600;color:var(--ink3);margin-top:10px;text-align:right}
-
-/* ── Validation ── */
 .val-ok{color:var(--g1);font-size:11px;margin-top:3px}
 .val-err{color:#dc2626;font-size:11px;margin-top:3px}
-
-/* ── PDF preview ── */
 #pdf-content{background:#fff;padding:28px;font-size:12px;line-height:1.7}
 #pdf-content h2{font-family:var(--font-d);font-size:16px;color:var(--g1);margin:18px 0 6px;border-bottom:1px solid var(--bdr2);padding-bottom:3px}
 #pdf-content h3{font-size:13px;font-weight:600;color:var(--ink);margin:12px 0 4px}
 .pdf-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:10px}
 .pdf-table th{background:var(--g1);color:#fff;padding:5px 8px;text-align:left;border:1px solid rgba(255,255,255,.2)}
 .pdf-table td{padding:5px 8px;border:1px solid var(--bdr);vertical-align:top}
-
-/* ── Toast ── */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:9px 16px;border-radius:var(--r);font-size:13px;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
 .toast.green{background:var(--g1)}
-
-/* ── Responsive ── */
 @media(max-width:900px){.body{grid-template-columns:0 1fr 0}.sidebar,.panel{display:none}}
-
-/* ── Mobile drawer ── */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
 .drawer-overlay.open{opacity:1;pointer-events:all}
 .drawer{position:fixed;left:0;top:0;bottom:0;width:240px;background:var(--white);z-index:301;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:12px 0;box-shadow:4px 0 20px rgba(0,0,0,.15)}
 .drawer.open{transform:translateX(0)}
 .drawer-close{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:50%;border:none;background:var(--bdr2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--ink2)}
-
-/* ── Bottom sheet (matrix on mobile) ── */
 .sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s}
 .sheet-overlay.open{opacity:1;pointer-events:all}
 .sheet{position:fixed;left:0;right:0;bottom:0;max-height:80vh;background:var(--white);z-index:301;border-radius:16px 16px 0 0;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:16px}
 .sheet.open{transform:translateY(0)}
 .sheet-handle{width:40px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 14px}
-
-/* ── Mobile fab buttons ── */
 .fab-row{position:fixed;bottom:20px;right:16px;display:flex;flex-direction:column;gap:8px;z-index:200}
 .fab{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);font-size:20px;transition:transform .15s}
 .fab:hover{transform:scale(1.05)}
 .fab-main{background:var(--g1);color:#fff}
 .fab-secondary{background:var(--white);color:var(--g1);border:2px solid var(--g1)}
 @media(min-width:901px){.fab-row{display:none}}
-
-/* ── Hamburger ── */
 .hamburger{display:none;flex-direction:column;gap:4px;cursor:pointer;padding:8px;border-radius:6px}
 .hamburger span{width:20px;height:2px;background:rgba(255,255,255,.9);border-radius:2px;display:block;transition:all .2s}
 @media(max-width:900px){.hamburger{display:flex}}
-
-/* ── Onboarding screen ── */
 .onboard{position:fixed;inset:0;background:var(--g1);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px}
 .onboard-card{background:var(--white);border-radius:20px;padding:36px 32px;max-width:440px;width:100%;text-align:center}
 .onboard-icon{font-size:48px;margin-bottom:16px}
@@ -246,8 +199,6 @@ textarea{min-height:72px;line-height:1.6}
 .onboard-name:focus{outline:none;border-color:var(--g2);background:var(--white)}
 .onboard-btn{width:100%;padding:12px;background:var(--g1);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;font-family:var(--font);transition:background .15s}
 .onboard-btn:hover{background:var(--g2)}
-
-/* ── Session completeness indicator ── */
 .completeness-bar{background:var(--bdr2);border-radius:var(--r);padding:12px 14px;margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .completeness-label{font-size:12px;color:var(--ink2)}
 .completeness-count{font-size:12px;font-weight:600}
@@ -255,31 +206,21 @@ textarea{min-height:72px;line-height:1.6}
 .completeness-count.partial{color:#d97706}
 .completeness-mini{height:4px;flex:1;background:var(--bdr);border-radius:4px;overflow:hidden}
 .completeness-mini-fill{height:100%;border-radius:4px;transition:width .3s}
-
-/* ── Improved tooltip button — larger touch target ── */
 .tip-btn{width:28px;height:28px;border-radius:50%;background:var(--b2);color:#fff;font-size:12px;font-weight:700;border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;vertical-align:middle;touch-action:manipulation}
 .tip-btn:hover{background:var(--b1)}
 @media(max-width:900px){.tip-btn{width:36px;height:36px;font-size:13px}}
-
-/* ── Required field marker ── */
 .req{color:#dc2626;margin-left:2px}
-
-/* ── Font size fixes — min 12px for all functional text ── */
 .box-label{font-size:11px!important}
 .tree-level-label{font-size:11px!important}
 .act-code{font-size:12px!important}
 .nav-num{font-size:11px!important}
 .mml-lbl{font-size:10px!important}
 .prog-bar{margin-top:4px}
-
-/* ── Improved toast ── */
 .toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:10px 16px;border-radius:var(--r);font-size:13px;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;max-width:320px;display:flex;align-items:center;gap:10px}
 .toast.show{opacity:1;transform:translateY(0);pointer-events:all}
 .toast.green{background:var(--g1)}
 .toast.err{background:#dc2626;pointer-events:all}
 .toast-close{background:none;border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:16px;padding:0;line-height:1;flex-shrink:0}
-
-/* ── Mobile layout improvements ── */
 @media(max-width:900px){
   .body{grid-template-columns:1fr}
   .topbar{padding:0 14px}
@@ -291,8 +232,6 @@ textarea{min-height:72px;line-height:1.6}
   .tree-grid{grid-template-columns:1fr!important}
   .tree-box textarea{min-height:54px}
 }
-
-/* ── Presupuesto first rubro auto-open indicator ── */
 .rubro-hint{font-size:11px;color:rgba(255,255,255,.7);margin-left:8px}
 </style>
 </head>
@@ -301,9 +240,6 @@ textarea{min-height:72px;line-height:1.6}
 <div id="toast" class="toast"></div>
 
 <script>
-// ═══════════════════════════════════════════════════════════════
-// CONSTANTS
-// ═══════════════════════════════════════════════════════════════
 const MUNICIPIOS = ['Aldana','Contadero','Córdoba','Cuaspud','Cumbal','Funes',
   'Guachucal','Guaitarilla','Gualmatán','Iles','Imués','Ipiales','Ospina',
   'Potosí','Puerres','Pupiales','Ricaurte','Sapuyes','Túquerres'];
@@ -504,9 +440,6 @@ const TIPS = {
   }
 };
 
-// ═══════════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════════
 const STORAGE_KEY = 'mml_sena_v3';
 const SESSIONS = [
   {id:1,label:'Identificación y contexto CTel'},
@@ -536,15 +469,13 @@ let S = {
   mdir: ['','',''], mind: ['','',''],
   obj_general:'', obj_especifico:'',
   resultados: ['','','',''],
-  // ── NUEVO: soporta varios objetivos específicos (modelo MGA-DNP/MinCiencias) ──
-  // Si tu convocatoria usa Propósito único (modelo SENA/CEPAL), basta con uno.
   objetivos_esp: [
     { id:1, texto:'', resultados:['','','',''],
       iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
       mv:'', sup:'', res_mv:[], res_sup:[],
       actividades_struct:[] }
   ],
-  actividades_struct: [],  // array of arrays
+  actividades_struct: [],
   iov_proposito: {ind:'',base:'',meta:'',plazo:''},
   iov_resultados: [],
   fin_ind:'', fin_mv:'', fin_sup:'',
@@ -564,15 +495,8 @@ let S = {
 };
 
 let activeTip = null;
-
-// ═══════════════════════════════════════════════════════════════
-// PERSISTENCE — localStorage + sessionStorage + IndexedDB
-// ═══════════════════════════════════════════════════════════════
 let dbReady = false, db = null;
 
-// ═══════════════════════════════════════════════════════════════
-// MOBILE UI — Drawer, Bottom Sheet, Onboarding
-// ═══════════════════════════════════════════════════════════════
 function openDrawer() {
   document.getElementById('nav-drawer').classList.add('open');
   document.getElementById('drawer-overlay').classList.add('open');
@@ -693,16 +617,11 @@ function loadDB() {
       if (e.target.result) {
         const idb = JSON.parse(e.target.result.v);
         const ls = loadLS();
-        // Use most recent — pero NUNCA si eso significa reemplazar contenido real
-        // por un payload vacío. Esta salvaguarda es la corrección directa al
-        // incidente de pérdida de datos del 25 de junio de 2026.
         const idbEsMasReciente = !ls || (idb.t && ls.t && idb.t > ls.t);
         const reemplazaríaContenidoBuenoConVacío = hasContent(S) && !hasContent(idb.data);
         if (idbEsMasReciente && !reemplazaríaContenidoBuenoConVacío) {
           Object.assign(S, idb.data);
-          migrateToMultiObjective(); // re-aplicar migración: IndexedDB puede traer un payload
-                                      // más viejo (sin objetivos_esp poblado) que sobrescribe
-                                      // lo que loadSaved() ya había migrado al inicio.
+          migrateToMultiObjective();
           render();
         } else if (reemplazaríaContenidoBuenoConVacío) {
           console.warn('Formulador MML: carga desde IndexedDB bloqueada — habría reemplazado datos con contenido por un estado vacío.');
@@ -725,11 +644,6 @@ function loadLS() {
   return null;
 }
 
-// ── Salvaguarda anti-pérdida de datos ───────────────────────────────
-// Detecta si un objeto de estado tiene contenido real escrito por el usuario
-// (no solo la estructura vacía por defecto). Se usa para bloquear cualquier
-// guardado o carga que reemplazaría datos buenos por datos vacíos —
-// la causa raíz del incidente del 25 de junio de 2026.
 function hasContent(data) {
   if (!data) return false;
   const camposTexto = ['titulo','problema','obj_central','obj_general','obj_especifico','resumen'];
@@ -750,9 +664,6 @@ function scheduleSave() {
 }
 
 function doSave() {
-  // Nunca persistir un estado vacío si ya había contenido guardado antes —
-  // evita que un S vacío (por ejemplo tras una carga fallida) sobrescriba
-  // datos reales ya guardados en localStorage o IndexedDB.
   if (!hasContent(S)) {
     const previo = loadLS();
     if (previo && hasContent(previo.data)) {
@@ -764,10 +675,6 @@ function doSave() {
   const payload = JSON.stringify({data:S, t:Date.now()});
   saveLS(payload);
   saveDB(payload);
-  // Respaldo rotativo: conserva la última versión CON CONTENIDO conocida,
-  // en una clave separada que nunca se sobrescribe con datos vacíos.
-  // Red de seguridad final, recuperable desde la consola con:
-  // localStorage.getItem('mml_sena_v3_backup')
   if (hasContent(S)) {
     try { localStorage.setItem(STORAGE_KEY + '_backup', payload); } catch(e) {}
   }
@@ -782,14 +689,11 @@ function updateSaveDot(state) {
   if (txt) txt.textContent = state === 'saving' ? 'Guardando…' : 'Guardado';
 }
 
-// Load on start
 let _restauroDesdeRespaldo = false;
 function loadSaved() {
   const saved = loadLS();
   if (saved && saved.data) Object.assign(S, saved.data);
 
-  // Red de seguridad: si lo que cargamos viene vacío, pero existe un respaldo
-  // con contenido real (guardado la última vez que S sí tenía datos), úsalo.
   if (!hasContent(S)) {
     try {
       const backup = localStorage.getItem(STORAGE_KEY + '_backup');
@@ -806,21 +710,9 @@ function loadSaved() {
   migrateToMultiObjective();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MIGRACIÓN — convierte la estructura vieja (1 objetivo específico)
-// a la nueva (varios objetivos específicos, modelo MGA-DNP/MinCiencias).
-// Se ejecuta UNA SOLA VEZ por sesión cargada. Nunca borra datos —
-// solo los reorganiza dentro de objetivos_esp[0].
-// ═══════════════════════════════════════════════════════════════
 function migrateToMultiObjective() {
-  // Bandera permanente: si ya migramos una vez en la vida de este usuario, JAMÁS
-  // volver a tocar objetivos_esp. ANTES esto se repetía en cada loadDB()/loadSaved(),
-  // y si objetivos_esp[0] quedaba vacío momentáneamente (uso normal), los campos
-  // legacy fantasma (obj_especifico, resultados) volvían a pisarlo o el usuario
-  // veía todo "corrido" hacia el objetivo 2. Corrección probada con Node (13/13 casos).
   if (S._migrated_v2) return;
 
-  // Asegura que exista el array, por si vino de un guardado muy antiguo
   if (!Array.isArray(S.objetivos_esp) || S.objetivos_esp.length === 0) {
     S.objetivos_esp = [{ id:1, texto:'', resultados:['','','',''],
       iov:{ind:'',base:'',meta:'',plazo:''}, iov_resultados:[],
@@ -832,7 +724,6 @@ function migrateToMultiObjective() {
     S.objetivos_esp[0].texto || (S.objetivos_esp[0].resultados||[]).some(r=>r) || S.objetivos_esp.length > 1;
 
   if (tieneDatosViejos && !yaTieneEstructuraNueva) {
-    // Vuelca todo el contenido viejo dentro del primer objetivo específico
     const o = S.objetivos_esp[0];
     o.texto = S.obj_especifico || '';
     o.resultados = (S.resultados && S.resultados.length) ? [...S.resultados] : ['','','',''];
@@ -845,18 +736,14 @@ function migrateToMultiObjective() {
     o.actividades_struct = Array.isArray(S.actividades_struct) ? S.actividades_struct.map(a=>[...(a||[])]) : [];
   }
 
-  // Apagar para siempre los campos legacy fantasma, y bloquear la migración futura.
   S.obj_especifico = '';
   S.resultados = ['','','',''];
   S._migrated_v2 = true;
-  scheduleSave(); // persiste la migración de inmediato
+  scheduleSave();
 }
 
-// ── Helpers para trabajar con varios objetivos específicos ──
 function resLlenosDe(obj) { return (obj.resultados||[]).filter(r=>r); }
 function todosLosResultados() {
-  // Junta los resultados de TODOS los objetivos específicos, para compatibilidad
-  // con código que antes recorría el array plano S.resultados
   return S.objetivos_esp.flatMap(o => resLlenosDe(o));
 }
 function addObjetivoEspecifico() {
@@ -867,7 +754,7 @@ function addObjetivoEspecifico() {
   scheduleSave(); render();
 }
 function removeObjetivoEspecifico(idx) {
-  if (S.objetivos_esp.length <= 1) return; // siempre debe quedar al menos 1
+  if (S.objetivos_esp.length <= 1) return;
   const o = S.objetivos_esp[idx];
   const preview = (o.texto||'').substring(0,40) || `Objetivo específico ${idx+1}`;
   if (!confirm(`¿Eliminar "${preview}"?\n\nEsto también borrará sus resultados, indicadores y actividades asociadas.`)) return;
@@ -875,9 +762,6 @@ function removeObjetivoEspecifico(idx) {
   scheduleSave(); render();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// DATA SETTERS — never trigger render, only save + patch
-// ═══════════════════════════════════════════════════════════════
 function set(key, val) { S[key] = val; scheduleSave(); patchLive(); }
 function setArr(key, i, val) { S[key][i] = val; scheduleSave(); patchLive(); }
 function setArrObj(key, i, f, val) { if(S[key][i]) S[key][i][f]=val; scheduleSave(); patchLive(); }
@@ -902,35 +786,24 @@ function toggleChip(key, val) {
   scheduleSave(); render();
 }
 
-// ═══════════════════════════════════════════════════════════════
-// LIVE PATCH — update only computed elements, never inputs
-// ═══════════════════════════════════════════════════════════════
 function patchLive() {
-  // Right panel matrix
   const panel = document.getElementById('live-matrix');
   if (panel) panel.innerHTML = buildMatrixPreview();
-  // Budget total
   const tot = document.getElementById('budget-total');
   if (tot) tot.textContent = '$ ' + calcGrandTotal().toLocaleString('es-CO');
-  // Validation hints
   patchValidation();
 }
 
 function patchValidation() {
-  // Obj general check
   const ogw = document.getElementById('og-warn');
   if (ogw) {
     const bad = S.obj_general && !S.obj_general.toLowerCase().startsWith('contribuir');
     ogw.style.display = bad ? '' : 'none';
   }
-  // Progress
   const pf = document.querySelector('.prog-fill');
   if (pf) pf.style.width = Math.round(S.completed.length/10*100)+'%';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// HELPERS
-// ═══════════════════════════════════════════════════════════════
 function calcGrandTotal() {
   return (S.presupuesto_v2||[]).reduce((s,rb)=>
     s+(rb.items||[]).reduce((ss,it)=>ss+(parseFloat(it.cant)||0)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0),0);
@@ -939,19 +812,7 @@ function calcRubroTotal(rb) {
   return (rb.items||[]).reduce((s,it)=>s+(parseFloat(it.cant)||0)*(parseFloat(it.tiempo)||1)*(parseFloat(it.unit)||0),0);
 }
 function pct() { return Math.round(S.completed.length/10*100); }
-// resLlenos() ahora junta los resultados de TODOS los objetivos específicos.
-// Esto mantiene compatibilidad con código que itera "todos los resultados".
 function resLlenos() { return todosLosResultados(); }
-
-// NOTA HISTÓRICA: anteriormente existía un sistema de "índice plano" (mapFlatIndex)
-// que traducía la posición de un resultado lleno dentro de TODOS los objetivos a un
-// solo número. Se eliminó porque ese índice se recalculaba dinámicamente según cuántos
-// resultados estaban llenos en cada momento — al escribir la primera letra en un
-// resultado vacío, su posición en el índice plano cambiaba a media escritura,
-// reasignando indicadores/actividades/medios al objetivo equivocado.
-// Ahora todo el código (S6, S7, S8, S9, panel en vivo, PDF) itera directamente por
-// posición fija (oi = índice del objetivo, ri = índice del resultado dentro de él),
-// que nunca cambia mientras el usuario escribe.
 
 function showToast(msg, type='', persist=false) {
   const t = document.getElementById('toast');
@@ -965,7 +826,6 @@ function showToast(msg, type='', persist=false) {
 }
 function goSession(id) { S.session=id; render(); window.scrollTo(0,0); }
 function sessionCompleteness() {
-  // Returns {filled, total, pct} for current session
   const rl = resLlenos();
   switch(S.session) {
     case 1: {
@@ -1036,7 +896,6 @@ function markDone() {
   if(pct < 50) {
     showToast(`Esta sesión está al ${pct}% — te recomendamos completar más campos antes de continuar.`, '', false);
     if(!S.completed.includes(S.session)) {
-      // Allow but don't auto-advance
       S.completed.push(S.session);
       scheduleSave(); render();
       return;
@@ -1058,9 +917,6 @@ function completenessBar() {
   </div>`;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// TOOLTIP
-// ═══════════════════════════════════════════════════════════════
 function showTip(key) {
   const tip = TIPS[key]; if(!tip) return;
   activeTip = key;
@@ -1106,23 +962,16 @@ function tipBtn(key) {
   return '<button class="tip-btn" onclick="showTip(&quot;'+key+'&quot;)" title="Ver definición y ejemplo">?</button>';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MATRIX PREVIEW (right panel)
-// ═══════════════════════════════════════════════════════════════
 function buildMatrixPreview() {
   const empty = '<span class="mp-empty">—</span>';
   let html = '';
 
-  // FIN
   html += '<div class="mp-row mp-fin">' +
     '<div class="mp-header">FIN — Objetivo general</div>' +
     '<div class="mp-body">' + (S.obj_general || empty) +
     (S.fin_ind ? '<div class="mp-sub">IOV: '+S.fin_ind+'</div>' : '') +
     '</div></div>';
 
-  // OBJETIVO(S) ESPECÍFICO(S), y anidados debajo: sus resultados, y debajo de cada
-  // resultado sus actividades. La numeración ya no necesita códigos compuestos
-  // (R1.1, A1.1.1) porque la jerarquía la muestra el anidado visual.
   const multiplesProp = S.objetivos_esp.length > 1;
   S.objetivos_esp.forEach((o,oi) => {
     html += '<div class="mp-row mp-prop">' +
@@ -1151,7 +1000,6 @@ function buildMatrixPreview() {
     html += '</div>';
   });
 
-  // PRECONDICIONES
   if(S.precondiciones) {
     html += '<div class="mp-row mp-pre">' +
       '<div class="mp-header">PRECONDICIONES</div>' +
@@ -1161,9 +1009,6 @@ function buildMatrixPreview() {
   return html || '<p style="color:var(--ink3);font-size:12px;padding:8px">La matriz se llenará automáticamente a medida que completes las sesiones.</p>';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// SESSION RENDERERS
-// ═══════════════════════════════════════════════════════════════
 function renderS1() {
   const muniGrid = MUNICIPIOS.map(m =>
     `<div class="muni-chip${S.municipios.includes(m)?' sel':''}" onclick="toggleMuni('${m}')">${m}</div>`
@@ -1255,7 +1100,6 @@ function renderS3() {
   );
 }
 
-// ── Mantiene sincronizados directos/indirectos: mismo número de cuadros ──
 function addEffectCause(kind) {
   if (kind === 'ef') { S.efdir.push(''); S.efind.push(''); }
   else { S.cadir.push(''); S.caind.push(''); }
@@ -1263,7 +1107,6 @@ function addEffectCause(kind) {
 }
 function removeEffectCause(key, idx) {
   S[key].splice(idx, 1);
-  // remove the matching indirect row too, keeping counts in sync
   const pair = { efdir: 'efind', cadir: 'caind' };
   const partner = pair[key];
   if (partner && S[partner].length > idx) S[partner].splice(idx, 1);
@@ -1321,7 +1164,6 @@ function renderS4() {
   );
 }
 
-// ── Mantiene sincronizados fines/medios directos e indirectos ──
 function addFinMedio(kind) {
   if (kind === 'fin') { S.fdir.push(''); S.find_.push(''); }
   else { S.mdir.push(''); S.mind.push(''); }
@@ -1372,7 +1214,6 @@ function renderS5() {
   );
 }
 
-// ── Borra un resultado dentro de un objetivo específico, en cascada ──
 function removeResultadoDe(oIdx, rIdx) {
   const o = S.objetivos_esp[oIdx];
   const preview = (o.resultados[rIdx]||'').substring(0,40) || `Resultado ${rIdx+1}`;
@@ -1452,8 +1293,6 @@ function renderS7() {
              : '<div style="background:#fef2f2;padding:4px 12px;font-size:10px;color:#dc2626">Completa los 4 campos</div>')
       + `</div>`;
   }
-  // Igual que iovRow, pero para un resultado en posición fija (oi, ri) — nunca recalcula
-  // su identidad según cuántos resultados están llenos en el momento.
   function iovRowResultadoFijo(label, oi, ri) {
     const o = S.objetivos_esp[oi];
     if (!o.iov_resultados[ri]) o.iov_resultados[ri] = {ind:'',base:'',meta:'',plazo:''};
@@ -1503,8 +1342,6 @@ function renderS8() {
       + `<div><div class="lbl">Supuesto ${tipBtn('supuesto')}</div><textarea rows="2" oninput="${supKey}=this.value;scheduleSave();patchLive()" placeholder="Ej: La comunidad mantiene su disposición a participar durante todo el proyecto">${esc(supVal)}</textarea></div>`
       + `</div></div>`;
   }
-  // Variante para un resultado en posición fija (oi, ri) — escribe directo en su lugar real,
-  // nunca recalcula su identidad según cuántos resultados están llenos en el momento.
   function mvSupRowResultadoFijo(badge, narrative, oi, ri, indHint) {
     const o = S.objetivos_esp[oi];
     while (o.res_mv.length <= ri) o.res_mv.push('');
@@ -1546,8 +1383,6 @@ function renderS8() {
 
 function renderS9() {
   const rl = resLlenos();
-  // Junta actividades de TODOS los objetivos específicos para el desplegable del presupuesto,
-  // usando la numeración jerárquica real (objetivo.resultado.actividad) — no busca por texto.
   const allActs = S.objetivos_esp.flatMap((o, oi) =>
     (o.actividades_struct||[]).flatMap((arr, ri) =>
       (arr||[]).filter(a=>a).map((a,ai) => ({code:`A${oi+1}.${ri+1}.${ai+1}`, label:a}))));
@@ -1628,9 +1463,6 @@ function renderS10() {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// LAYOUT HELPERS
-// ═══════════════════════════════════════════════════════════════
 function esc(v) { return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function card(title, content) {
   return '<div class="card"><div class="card-title">'+title+'</div>'+content+'</div>';
@@ -1642,34 +1474,307 @@ function fieldRow2(...fields) { return '<div class="field-row cols2">'+fields.jo
 function fieldRow3(...fields) { return '<div class="field-row cols3">'+fields.join('')+'</div>'; }
 
 // ═══════════════════════════════════════════════════════════════
-// PDF EXPORT
+// PDF EXPORT — texto vectorial real (copiable), NUNCA una imagen
+// rasterizada. Se genera directamente desde S, no desde el DOM,
+// así que incluye TODAS las secciones diligenciadas del proyecto
+// (igual que el Excel), no solo la Matriz MML.
+//
+// Regla de fondo (misma que ya seguíamos en la app): las Actividades
+// NO llevan columnas de Indicador/Medio de verificación/Supuesto en
+// la Matriz MML clásica — por eso viven en una sección aparte,
+// "Cadena de ejecución", como un árbol anidado Objetivo → Resultado
+// → Actividad, para no saturar la matriz con filas que no le
+// corresponden según los fundamentos de Marco Lógico.
 // ═══════════════════════════════════════════════════════════════
-async function exportPDF() {
+function pdfBuildDoc() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const MG = 14;
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const CW = pageW - MG * 2; // ancho útil
+  let y = MG;
+
+  const COLORS = {
+    g1: [26, 92, 56], g2: [45, 122, 79], ink: [26, 26, 24], ink2: [74, 74, 69], ink3: [138, 138, 130],
+    fi: [239, 246, 255], prop: [240, 253, 244], res: [255, 255, 255], pre: [254, 243, 199],
+    tanText: [146, 64, 14], white: [255, 255, 255]
+  };
+
+  function checkSpace(need) {
+    if (y + need > pageH - MG) { doc.addPage(); y = MG; }
+  }
+
+  function h1(text) {
+    checkSpace(12);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(...COLORS.g1);
+    doc.text(text, MG, y);
+    y += 2;
+    doc.setDrawColor(226, 232, 224); doc.setLineWidth(0.3);
+    doc.line(MG, y, pageW - MG, y);
+    y += 6;
+  }
+
+  function paragraph(text, opts = {}) {
+    if (!text) return;
+    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+    doc.setFontSize(opts.size || 10);
+    doc.setTextColor(...(opts.color || COLORS.ink2));
+    const lines = doc.splitTextToSize(text, CW);
+    lines.forEach(line => {
+      checkSpace(5.5);
+      doc.text(line, MG, y);
+      y += 5;
+    });
+    y += opts.gap != null ? opts.gap : 3;
+  }
+
+  function nivelRowStyle(nivel) {
+    if (/^FIN/.test(nivel)) return COLORS.fi;
+    if (/OBJ\. ESP|PROP[ÓO]SITO/.test(nivel)) return COLORS.prop;
+    if (/Resultado/.test(nivel)) return COLORS.res;
+    if (/PRECONDICI/.test(nivel)) return COLORS.pre;
+    return COLORS.white;
+  }
+
+  function table(head, rows, opts = {}) {
+    if (!rows.length) return;
+    doc.autoTable({
+      startY: y,
+      margin: { left: MG, right: MG },
+      head: [head],
+      body: rows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 2.2, textColor: COLORS.ink, lineColor: [226,232,224], lineWidth: 0.2, valign: 'top' },
+      headStyles: { fillColor: COLORS.g1, textColor: 255, fontSize: 8.5, fontStyle: 'bold' },
+      columnStyles: opts.columnStyles || {},
+      didParseCell: opts.didParseCell,
+    });
+    y = doc.lastAutoTable.finalY + 7;
+  }
+
+  // ── Portada ──
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(217, 119, 6);
+  doc.text('JÓVENES EN CIENCIA PARA LA PAZ – CAPÍTULO IPIALES', MG, y); y += 7;
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...COLORS.g1);
+  doc.splitTextToSize(S.titulo || 'Sin título', CW).forEach(line => { doc.text(line, MG, y); y += 6.5; });
+  y += 1;
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...COLORS.ink2);
+  doc.text([S.f1, S.f2, S.f3].filter(Boolean).join(' · ') || '—', MG, y); y += 5.5;
+  doc.setFontSize(9); doc.setTextColor(...COLORS.ink3);
+  doc.text('Municipios: ' + (S.municipios.join(', ') || '—') + '   ·   Duración: ' + (S.duracion || '—') + ' meses', MG, y);
+  y += 9;
+
+  if (S.resumen) { h1('Resumen ejecutivo'); paragraph(S.resumen); }
+
+  // ── 1. Árbol de problemas ──
+  h1('1. Árbol de problemas');
+  {
+    const rows = [];
+    S.efind.filter(Boolean).forEach(v => rows.push(['Efecto 2.º orden', v]));
+    S.efdir.filter(Boolean).forEach(v => rows.push(['Efecto directo', v]));
+    if (S.problema) rows.push(['PROBLEMA CENTRAL', S.problema]);
+    S.cadir.filter(Boolean).forEach(v => rows.push(['Causa directa', v]));
+    S.caind.filter(Boolean).forEach(v => rows.push(['Causa 2.º orden', v]));
+    table(['Nivel', 'Descripción'], rows, {
+      columnStyles: { 0: { cellWidth: 38, fontStyle: 'bold', fontSize: 8 } },
+      didParseCell: (d) => {
+        if (d.section === 'body') {
+          const nivel = d.row.raw[0];
+          const c = /PROBLEMA/.test(nivel) ? [232,245,238] : /Efecto/.test(nivel) ? [239,246,255] : [255,251,235];
+          d.cell.styles.fillColor = c;
+        }
+      }
+    });
+  }
+
+  // ── 2. Árbol de objetivos ──
+  h1('2. Árbol de objetivos');
+  {
+    const rows = [];
+    S.find_.filter(Boolean).forEach(v => rows.push(['Fin 2.º orden', v]));
+    S.fdir.filter(Boolean).forEach(v => rows.push(['Fin directo', v]));
+    if (S.obj_central) rows.push(['OBJETIVO CENTRAL', S.obj_central]);
+    S.mdir.filter(Boolean).forEach(v => rows.push(['Medio directo', v]));
+    S.mind.filter(Boolean).forEach(v => rows.push(['Medio 2.º orden', v]));
+    table(['Nivel', 'Descripción'], rows, {
+      columnStyles: { 0: { cellWidth: 38, fontStyle: 'bold', fontSize: 8 } },
+      didParseCell: (d) => {
+        if (d.section === 'body') {
+          const nivel = d.row.raw[0];
+          const c = /OBJETIVO CENTRAL/.test(nivel) ? [232,245,238] : /Fin/.test(nivel) ? [239,246,255] : [220,252,231];
+          d.cell.styles.fillColor = c;
+        }
+      }
+    });
+  }
+
+  // ── 3. Objetivos (general + específicos + resultados) ──
+  h1('3. Objetivos');
+  {
+    const rows = [['Objetivo general', S.obj_general || '—']];
+    const multiples = S.objetivos_esp.length > 1;
+    S.objetivos_esp.forEach((o, oi) => {
+      rows.push(['Objetivo específico' + (multiples ? ' ' + (oi + 1) : ''), o.texto || '—']);
+      (o.resultados || []).forEach((r, ri) => { if (r) rows.push(['   Resultado ' + (ri + 1), r]); });
+    });
+    table(['Nivel', 'Descripción'], rows, {
+      columnStyles: { 0: { cellWidth: 42, fontStyle: 'bold', fontSize: 8 } }
+    });
+  }
+
+  // ── 3b. Cadena de ejecución: Objetivo → Resultado → Actividad ──
+  // (Fuera de la Matriz MML a propósito: la Actividad no lleva IOV/MV/Supuesto)
+  const hayActividades = S.objetivos_esp.some(o => (o.actividades_struct || []).some(arr => (arr || []).some(a => a)));
+  if (hayActividades) {
+    h1('Cadena de ejecución (Objetivo - Resultado - Actividad)');
+    paragraph('Muestra cómo se despliega cada Objetivo Específico en sus Resultados y Actividades. Las Actividades no llevan indicador, medio de verificación ni supuesto propios — eso solo aplica al Fin, al Propósito y a los Resultados en la Matriz MML.', { size: 8.5, color: COLORS.ink3, gap: 4 });
+    const multiples = S.objetivos_esp.length > 1;
+    S.objetivos_esp.forEach((o, oi) => {
+      const tieneAlgo = (o.resultados || []).some(r => r);
+      if (!tieneAlgo) return;
+      checkSpace(8);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...COLORS.g1);
+      doc.text('Objetivo específico' + (multiples ? ' ' + (oi + 1) : '') + ': ' + (o.texto || 'sin definir'), MG, y, { maxWidth: CW });
+      y += doc.splitTextToSize(o.texto || 'sin definir', CW - 45).length * 5 + 3;
+
+      (o.resultados || []).forEach((r, ri) => {
+        if (!r) return;
+        checkSpace(7);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(21, 128, 61);
+        const rLines = doc.splitTextToSize('• Resultado ' + (ri + 1) + ': ' + r, CW - 6);
+        rLines.forEach(l => { checkSpace(5); doc.text(l, MG + 6, y); y += 4.6; });
+
+        const acts = ((o.actividades_struct || [])[ri] || []).filter(a => a);
+        acts.forEach((a, ai) => {
+          checkSpace(5);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...COLORS.ink2);
+          const aLines = doc.splitTextToSize('– Actividad ' + (ai + 1) + ': ' + a, CW - 16);
+          aLines.forEach(l => { checkSpace(4.5); doc.text(l, MG + 14, y); y += 4.2; });
+        });
+        y += 1.5;
+      });
+      y += 3;
+    });
+    y += 2;
+  }
+
+  // ── 4. Matriz de Marco Lógico (Fin / Propósito(s) / Resultados — SIN actividades) ──
+  h1('4. Matriz de Marco Lógico');
+  {
+    const rows = [];
+    rows.push(['FIN', S.obj_general || '—', S.fin_ind || '—', S.fin_mv || '—', S.fin_sup || '—']);
+    const multiples = S.objetivos_esp.length > 1;
+    S.objetivos_esp.forEach((o, oi) => {
+      const nivelProp = 'OBJ. ESP.' + (multiples ? ' ' + (oi + 1) : '') + ' (PROPÓSITO' + (multiples ? ' ' + (oi + 1) : '') + ')';
+      const iovProp = o.iov.ind ? (o.iov.ind + '\nBase: ' + (o.iov.base || '—') + ' -> Meta: ' + (o.iov.meta || '—') + ' -> ' + (o.iov.plazo || '—')) : '—';
+      rows.push([nivelProp, o.texto || '—', iovProp, o.mv || '—', o.sup || '—']);
+      (o.resultados || []).forEach((r, ri) => {
+        if (!r) return;
+        const iov = (o.iov_resultados[ri]) || {};
+        const iovTxt = iov.ind ? (iov.ind + '\nBase: ' + (iov.base || '—') + ' -> ' + (iov.meta || '—') + ' -> ' + (iov.plazo || '—')) : '—';
+        rows.push(['   Resultado ' + (ri + 1), r, iovTxt, (o.res_mv || [])[ri] || '—', (o.res_sup || [])[ri] || '—']);
+      });
+    });
+    doc.autoTable({
+      startY: y,
+      margin: { left: MG, right: MG },
+      head: [['Nivel', 'Resumen narrativo', 'Indicador (IOV)', 'Medio de verificación', 'Supuesto']],
+      body: rows,
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 8, cellPadding: 2, textColor: COLORS.ink, lineColor: [226,232,224], lineWidth: 0.2, valign: 'top' },
+      headStyles: { fillColor: COLORS.g1, textColor: 255, fontSize: 8, fontStyle: 'bold' },
+      columnStyles: { 0: { cellWidth: 24, fontStyle: 'bold', fontSize: 7.5 }, 1: { cellWidth: 50 }, 2: { cellWidth: 46 }, 3: { cellWidth: 34 }, 4: { cellWidth: 28 } },
+      didParseCell: (d) => {
+        if (d.section === 'body') d.cell.styles.fillColor = nivelRowStyle(d.row.raw[0]);
+      }
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  }
+
+  if (S.precondiciones) {
+    checkSpace(10);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...COLORS.tanText);
+    doc.text('Precondiciones:', MG, y); y += 4.5;
+    paragraph(S.precondiciones, { size: 9 });
+  }
+
+  // ── 5. Presupuesto por rubros SENA ──
+  const hayPresupuesto = (S.presupuesto_v2 || []).some(rb => (rb.items || []).some(it => it.desc));
+  if (hayPresupuesto) {
+    h1('5. Presupuesto por rubros SENA');
+    (S.presupuesto_v2 || []).forEach(rb => {
+      const meta = RUBROS_SENA.find(r => r.id === rb.id) || { label: rb.id };
+      const items = (rb.items || []).filter(it => it.desc);
+      if (!items.length) return;
+      checkSpace(8);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...COLORS.g1);
+      doc.text(meta.label, MG, y); y += 4.5;
+      const rows = items.map(it => {
+        const tot = Math.round((parseFloat(it.cant) || 0) * (parseFloat(it.tiempo) || 1) * (parseFloat(it.unit) || 0));
+        return [it.desc || '—', it.act || '—', String(it.cant || 1), String(it.tiempo || 1), '$' + (parseFloat(it.unit) || 0).toLocaleString('es-CO'), '$' + tot.toLocaleString('es-CO'), it.just || '—'];
+      });
+      doc.autoTable({
+        startY: y, margin: { left: MG, right: MG },
+        head: [['Descripción', 'Act.', 'Cant.', 'Meses', 'V. unit.', 'Total', 'Justificación']],
+        body: rows, theme: 'grid',
+        styles: { font: 'helvetica', fontSize: 7.8, cellPadding: 1.8, valign: 'top' },
+        headStyles: { fillColor: [45, 122, 79], textColor: 255, fontSize: 7.8 },
+        columnStyles: { 1: { cellWidth: 16 }, 2: { cellWidth: 13 }, 3: { cellWidth: 13 }, 4: { cellWidth: 20 }, 5: { cellWidth: 20 } }
+      });
+      y = doc.lastAutoTable.finalY + 5;
+    });
+    checkSpace(9);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(...COLORS.g1);
+    doc.text('TOTAL GENERAL: $' + Math.round(calcGrandTotal()).toLocaleString('es-CO'), MG, y);
+    y += 9;
+  }
+
+  // ── 6. Riesgos ──
+  const hayRiesgos = (S.riesgos || []).some(r => r.desc);
+  if (hayRiesgos) {
+    h1('6. Gestión de riesgos');
+    const rows = S.riesgos.filter(r => r.desc).map(r => [r.tipo || '—', r.prob || '—', r.imp || '—', r.desc || '—', r.mit || '—', r.cont || '—']);
+    table(['Tipo', 'Prob.', 'Impacto', 'Descripción', 'Mitigación', 'Contingencia'], rows, {
+      columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 16 }, 2: { cellWidth: 16 } }
+    });
+  }
+
+  // ── 7. Sostenibilidad e impactos ──
+  const haySost = [S.sos_amb, S.sos_soc, S.sos_cap, S.imp_form, S.imp_soc, S.imp_amb, S.imp_tec].some(Boolean);
+  if (haySost) {
+    h1('7. Sostenibilidad e impactos esperados');
+    const bloques = [
+      ['Sostenibilidad ambiental', S.sos_amb], ['Sostenibilidad social', S.sos_soc], ['Continuidad institucional', S.sos_cap],
+      ['Impacto en formación', S.imp_form], ['Impacto social', S.imp_soc], ['Impacto ambiental', S.imp_amb], ['Impacto tecnológico', S.imp_tec]
+    ];
+    bloques.forEach(([label, val]) => {
+      if (!val) return;
+      checkSpace(8);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...COLORS.g1);
+      doc.text(label + ':', MG, y); y += 4.3;
+      paragraph(val, { size: 9 });
+    });
+  }
+
+  // ── Numeración de páginas ──
+  const total = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(160, 160, 160);
+    doc.text('Página ' + p + ' de ' + total, pageW / 2, pageH - 6, { align: 'center' });
+  }
+
+  return doc;
+}
+
+function exportPDF() {
   showToast('Generando PDF…');
-  const el = document.getElementById('pdf-preview-content');
-  if(!el){showToast('Abre Vista previa primero',''); return;}
   try {
-    const {jsPDF}=window.jspdf;
-    const MG=12, canvas=await html2canvas(el,{scale:2.2,backgroundColor:'#fff',useCORS:true});
-    const pdf=new jsPDF({unit:'mm',format:'a4'});
-    const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
-    const aw=pw-MG*2, ah=ph-MG*2;
-    const ih=(canvas.height/canvas.width)*aw;
-    const pages=Math.ceil(ih/ah);
-    const img=canvas.toDataURL('image/jpeg',0.92);
-    for(let p=0;p<pages;p++){
-      if(p>0) pdf.addPage();
-      pdf.setFillColor(255,255,255); pdf.rect(0,0,pw,ph,'F');
-      pdf.addImage(img,'JPEG',MG,MG-p*ah,aw,ih,undefined,'FAST');
-      pdf.setFillColor(255,255,255);
-      pdf.rect(0,0,pw,MG,'F'); pdf.rect(0,MG+ah,pw,ph,'F');
-      pdf.setFontSize(7.5); pdf.setTextColor(160,160,160);
-      pdf.text('Página '+(p+1)+' de '+pages, pw/2, ph-4, {align:'center'});
-      if(p>0){pdf.setFontSize(7);pdf.setTextColor(100,100,100);pdf.text((S.titulo||'Formulador MML').substring(0,60),MG,MG-2);}
-    }
-    pdf.save(((S.titulo||'FormuladorMML').replace(/[^a-zA-Z0-9]/g,'_').substring(0,40))+'_MML.pdf');
-    showToast('PDF descargado ✓','green');
-  } catch(e){showToast('Error: '+e.message,'');}
+    const doc = pdfBuildDoc();
+    doc.save(((S.titulo || 'FormuladorMML').replace(/[^a-zA-Z0-9]/g, '_').substring(0, 40)) + '_MML.pdf');
+    showToast('PDF descargado ✓ (texto real, copiable)', 'green');
+  } catch (e) { showToast('Error: ' + e.message, ''); }
 }
 
 function exportJSON() {
@@ -1695,8 +1800,6 @@ function importJSON() {
   inp.click();
 }
 
-// Permite al usuario revisar manualmente si existe un respaldo de emergencia
-// (la última versión CON CONTENIDO guardada) sin necesitar la consola del navegador.
 function checkEmergencyBackup() {
   try {
     const backup = localStorage.getItem(STORAGE_KEY + '_backup');
@@ -1782,11 +1885,6 @@ function showPDFPreview() {
     '</div></div>';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MAIN RENDER
-// ═══════════════════════════════════════════════════════════════
-// ── Repara desincronización heredada de datos guardados antes de esta corrección ──
-// Solo agrega vacíos al más corto; nunca borra contenido ya escrito.
 function normalizeTreeArrays() {
   function sync(dirKey, indKey) {
     const target = Math.max(S[dirKey].length, S[indKey].length);
@@ -1830,8 +1928,6 @@ function render() {
 
   document.getElementById('root').innerHTML =
     '<div class="app">' +
-
-    // ── TOPBAR ──────────────────────────────────────────
     '<div class="topbar">' +
     '<div style="display:flex;align-items:center;gap:10px">' +
     '<div class="hamburger" onclick="openDrawer()" aria-label="Abrir menú de navegación">' +
@@ -1843,10 +1939,7 @@ function render() {
     '<button class="btn sm" onclick="exportJSON()" style="color:#a8d5b8;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:11px" aria-label="Exportar respaldo JSON">Respaldo</button>' +
     '<button class="btn sm" onclick="importJSON()" style="color:#a8d5b8;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.08);font-size:11px" aria-label="Importar respaldo JSON">Importar</button>' +
     '</div></div>' +
-
     '<div class="body">' +
-
-    // ── SIDEBAR (desktop) ────────────────────────────────
     '<div class="sidebar">' +
     '<div class="sidebar-section">Progreso general</div>' +
     '<div class="prog-bar"><div class="prog-fill" style="width:'+p+'%"></div></div>' +
@@ -1869,8 +1962,6 @@ function render() {
     '<button class="sidebar-btn" onclick="checkEmergencyBackup()" style="color:#92400e">' +
     '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Revisar respaldo de emergencia</button>' +
     '</div>' +
-
-    // ── MAIN CONTENT ─────────────────────────────────────
     '<div class="main"><div class="main-inner">' +
     '<div class="session-header">' +
     '<span class="badge badge-s">Sesión '+S.session+' de 10</span>' +
@@ -1879,55 +1970,38 @@ function render() {
     '<p style="margin-top:4px">Complete los campos. El botón <strong style="background:var(--b2);color:#fff;border-radius:50%;display:inline-flex;width:18px;height:18px;align-items:center;justify-content:center;font-size:10px">?</strong> muestra la definición oficial y ejemplos de redacción.</p>' +
     '</div>' +
     renderSession() +
-    // Completeness bar
     '<div class="completeness-bar" style="margin-top:12px">' +
     '<span class="completeness-label">Campos de esta sesión</span>' +
     '<div class="completeness-mini"><div class="completeness-mini-fill" style="width:'+comp.pct+'%;background:'+compColor+'"></div></div>' +
     '<span class="completeness-count '+(comp.pct>=80?'full':'partial')+'">'+comp.filled+'/'+comp.total+'</span>' +
     '</div>' +
-    // Nav buttons
     '<div class="nav-footer">' +
     '<button class="btn" onclick="goSession('+Math.max(1,S.session-1)+')" '+(S.session===1?'disabled':'')+' aria-label="Sesión anterior">' +
     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg> Anterior</button>' +
     '<button class="btn primary" onclick="markDone()" style="'+btnStyle+'" aria-label="Marcar sesión como completada">'+btnLabel+'</button>' +
     '</div></div></div>' +
-
-    // ── RIGHT PANEL (desktop) ────────────────────────────
     '<div class="panel">' +
     '<div class="panel-title">' +
     '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>' +
     'Matriz MML en vivo</div>' +
     '<div id="live-matrix">'+buildMatrixPreview()+'</div>' +
     '</div>' +
-
-    '</div></div>' + // close body + app
-
-    // ── MOBILE DRAWER ────────────────────────────────────
+    '</div></div>' +
     buildDrawerHTML() +
-
-    // ── MOBILE BOTTOM SHEET ──────────────────────────────
     buildSheetHTML() +
-
-    // ── ONBOARDING ───────────────────────────────────────
     buildOnboardHTML() +
-
-    // ── MOBILE FABs ──────────────────────────────────────
     '<div class="fab-row">' +
     '<button class="fab fab-secondary" onclick="openSheet()" aria-label="Ver matriz MML" title="Ver Matriz MML">📋</button>' +
     '<button class="fab fab-secondary" onclick="openDrawer()" aria-label="Abrir menú" title="Menú de sesiones">☰</button>' +
     '</div>';
 
   setTimeout(patchLive, 0);
-  // Sync mobile sheet matrix if open
   setTimeout(() => {
     const sm = document.getElementById('live-matrix-sheet');
     if(sm) sm.innerHTML = buildMatrixPreview();
   }, 0);
 }
 
-// ═══════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════
 window.addEventListener('load', () => {
   loadSaved();
   initDB();
@@ -1940,7 +2014,6 @@ window.addEventListener('load', () => {
   }
 });
 
-// Auto-save on visibility change (tab switch / close)
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') doSave();
 });
