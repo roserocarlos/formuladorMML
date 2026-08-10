@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -554,6 +555,9 @@ function buildDrawerHTML() {
     </button>
     <button class="sidebar-btn" onclick="importJSON();closeDrawer()">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 5 17 10"/></svg>Importar respaldo
+    </button>
+    <button class="sidebar-btn" onclick="importExcel();closeDrawer()" style="color:#0f766e">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 13h2v5H8zM14 13h2v5h-2zM8 8h8"/></svg>Cargar desde Excel
     </button>
     <button class="sidebar-btn" onclick="checkEmergencyBackup();closeDrawer()" style="color:#92400e">
       <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Revisar respaldo de emergencia
@@ -1784,6 +1788,395 @@ function exportJSON() {
   a.click(); showToast('Respaldo descargado ✓','green');
 }
 
+// ═══════════════════════════════════════════════════════════════
+// CARGAR DESDE EXCEL — convierte una plantilla .xlsx del Formulador
+// MML (misma estructura que el Excel descargable) directamente al
+// estado S de la app. Lee por ETIQUETA DE TEXTO, no por coordenada
+// fija, para tolerar variaciones razonables entre versiones de la
+// plantilla (ej. distinto número de resultados por objetivo).
+// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
+// Parser de Excel -> estructura S del Formulador MML.
+// Lee por ETIQUETA DE TEXTO (columna B), no por coordenada fija de
+// celda, para no romperse si la plantilla trae más o menos filas
+// (ej. 2 resultados vs 3 resultados por objetivo).
+// ═══════════════════════════════════════════════════════════════
+
+function xlAOA(wb, sheetName) {
+  const ws = wb.Sheets[sheetName];
+  if (!ws) return null;
+  // OJO: sheet_to_json recorta la columna A del array si está vacía en TODA
+  // la hoja (ej. "0. Portada", donde las etiquetas empiezan en B) — eso
+  // desplazaría todos los índices en 1. Forzamos el rango completo desde
+  // A1 para que la columna A siempre sea el índice 0, sin importar si
+  // tiene contenido o no.
+  const ref = ws['!ref'] || 'A1:A1';
+  const range = XLSX.utils.decode_range(ref);
+  range.s.c = 0; // forzar inicio en columna A
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false, range: XLSX.utils.encode_range(range) });
+}
+
+function xlNorm(v) {
+  return String(v == null ? '' : v).trim();
+}
+
+function xlLooksLikeGuide(v) {
+  const t = xlNorm(v);
+  if (!t) return true;
+  if (t.startsWith('📝') || t.startsWith('Ej:') || t.startsWith('Ej.')) return true;
+  if (/…$/.test(t)) return true; // el texto guía de esta plantilla siempre termina en elipsis
+  if (/^(Alta|Alto) \/ (Media|Medio) \/ (Baja|Bajo)$/.test(t)) return true; // placeholder de Riesgos
+  return false;
+}
+
+function xlParseIdentificacion(wb, LINEAS, MUNICIPIOS) {
+  const out = { titulo: '', f1: '', f2: '', f3: '', linea: '', sublinea: '', municipios: [], duracion: '', palabras: '' };
+  let aoa = xlAOA(wb, '0. Portada');
+  // Índices de ARRAY (0-based) = fila de Excel - 1. Columna 1 = B (etiqueta), columna 2 = C (valor).
+  let map = { titulo: 7, f1: 9, f2: 10, f3: 11, linea: 13, sublinea: 14, municipios: 16, duracion: 17, palabras: 20 };
+  const portadaVacia = !aoa || !xlNorm((aoa[map.titulo] || [])[2]);
+  if (portadaVacia) {
+    aoa = xlAOA(wb, '1. Identificación');
+    map = { titulo: 4, f1: 9, f2: 10, f3: 11, linea: 5, sublinea: 6, municipios: 7, duracion: 13, palabras: 17 };
+  }
+  if (!aoa) return out;
+  const get = (r) => xlNorm((aoa[r] || [])[2]);
+
+  out.titulo = get(map.titulo);
+  out.f1 = get(map.f1);
+  out.f2 = get(map.f2);
+  out.f3 = get(map.f3);
+  out.sublinea = get(map.sublinea);
+  out.duracion = String(get(map.duracion)).replace(/[^0-9]/g, '') || '';
+  out.palabras = get(map.palabras);
+
+  const lineaTxt = get(map.linea).toLowerCase();
+  if (lineaTxt && !lineaTxt.includes('/')) { // en la guía sin llenar viene la lista completa con "/"
+    const found = LINEAS.find(l => lineaTxt.includes(l.label.toLowerCase()) || l.label.toLowerCase().includes(lineaTxt));
+    if (found) out.linea = found.id;
+  }
+
+  const muniTxt = get(map.municipios);
+  if (muniTxt && !xlLooksLikeGuide(muniTxt) && muniTxt.split(',').length < MUNICIPIOS.length) {
+    out.municipios = muniTxt.split(/[,/]/).map(s => s.trim()).filter(s => MUNICIPIOS.includes(s));
+  }
+  return out;
+}
+
+function xlParseArboles(wb) {
+  const out = { efdir: [], efind: [], cadir: [], caind: [], problema: '', fdir: [], find_: [], mdir: [], mind: [], obj_central: '' };
+  const prob = xlAOA(wb, '2. Árbol de Problemas');
+  const obje = xlAOA(wb, '3. Árbol de Objetivos');
+
+  function collect(aoa, prefix, arr) {
+    if (!aoa) return;
+    for (let r = 0; r < aoa.length; r++) {
+      const label = xlNorm((aoa[r] || [])[1]);
+      if (new RegExp('^' + prefix + ' \\d+$', 'i').test(label)) {
+        const val = xlNorm((aoa[r] || [])[2]);
+        if (val && !xlLooksLikeGuide(val)) arr.push(val);
+      }
+    }
+  }
+  collect(prob, 'Efecto indirecto', out.efind);
+  collect(prob, 'Efecto directo', out.efdir);
+  collect(prob, 'Causa directa', out.cadir);
+  collect(prob, 'Causa indirecta', out.caind);
+  collect(obje, 'Fin indirecto', out.find_);
+  collect(obje, 'Fin directo', out.fdir);
+  collect(obje, 'Medio directo', out.mdir);
+  collect(obje, 'Medio indirecto', out.mind);
+
+  if (prob) {
+    for (let r = 0; r < prob.length; r++) {
+      if (xlNorm((prob[r] || [])[1]) === 'PROBLEMA CENTRAL') {
+        const val = xlNorm((prob[r] || [])[2]);
+        if (val && !xlLooksLikeGuide(val)) out.problema = val;
+      }
+    }
+  }
+  if (obje) {
+    for (let r = 0; r < obje.length; r++) {
+      if (xlNorm((obje[r] || [])[1]) === 'OBJETIVO CENTRAL') {
+        const val = xlNorm((obje[r] || [])[2]);
+        if (val && !xlLooksLikeGuide(val)) out.obj_central = val;
+      }
+    }
+  }
+  // Asegurar mínimo 3 casillas por nivel (como espera la app)
+  ['efdir', 'efind', 'cadir', 'caind', 'fdir', 'find_', 'mdir', 'mind'].forEach(k => {
+    while (out[k].length < 3) out[k].push('');
+  });
+  return out;
+}
+
+function xlParseObjGeneral(wb) {
+  const aoa = xlAOA(wb, '4. Objetivos');
+  if (!aoa) return '';
+  for (let r = 0; r < aoa.length; r++) {
+    if (xlNorm((aoa[r] || [])[1]) === 'OBJETIVO GENERAL (FIN)') {
+      const val = xlNorm((aoa[r] || [])[2]);
+      if (val && !xlLooksLikeGuide(val)) return val;
+    }
+  }
+  return '';
+}
+
+// Lee "5. Matriz MML" (estructura + narrativo + IOV + MV + supuesto) y
+// "6. Indicadores IOV" (línea base / meta / plazo) y las combina por
+// posición (mismo orden: Propósito, luego sus Resultados, repetido por
+// cada Objetivo Específico).
+function xlParseMatrizYObjetivos(wb) {
+  const result = { objetivos_esp: [], fin_ind: '', fin_mv: '', fin_sup: '', precondiciones: '' };
+  const mml = xlAOA(wb, '5. Matriz MML');
+  const iov = xlAOA(wb, '6. Indicadores IOV');
+  if (!mml) return result;
+
+  // ── 1) Estructura + narrativo + IOV/MV/Supuesto desde "5. Matriz MML" ──
+  const bloques = []; // [{ texto, ind, mv, sup, resultados:[{texto,ind,mv,sup}] }]
+  let actual = null;
+  for (let r = 0; r < mml.length; r++) {
+    const row = mml[r] || [];
+    const nivel = xlNorm(row[1]).replace(/\n/g, ' ');
+    const narrativo = xlNorm(row[2]);
+    const ind = xlNorm(row[4]);
+    const mv = xlNorm(row[5]);
+    const sup = xlNorm(row[6]);
+
+    if (/^FIN\b/i.test(nivel)) {
+      if (ind && !xlLooksLikeGuide(ind)) result.fin_ind = ind;
+      if (mv && !xlLooksLikeGuide(mv)) result.fin_mv = mv;
+      if (sup && !xlLooksLikeGuide(sup)) result.fin_sup = sup;
+      continue;
+    }
+    if (/^OBJ\.?\s*ESP/i.test(nivel)) {
+      actual = {
+        texto: !xlLooksLikeGuide(narrativo) ? narrativo : '',
+        ind: !xlLooksLikeGuide(ind) ? ind : '',
+        mv: !xlLooksLikeGuide(mv) ? mv : '',
+        sup: !xlLooksLikeGuide(sup) ? sup : '',
+        resultados: []
+      };
+      bloques.push(actual);
+      continue;
+    }
+    if (/^↳/.test(nivel) && actual) {
+      actual.resultados.push({
+        texto: !xlLooksLikeGuide(narrativo) ? narrativo : '',
+        ind: !xlLooksLikeGuide(ind) ? ind : '',
+        mv: !xlLooksLikeGuide(mv) ? mv : '',
+        sup: !xlLooksLikeGuide(sup) ? sup : ''
+      });
+      continue;
+    }
+    if (/^PRE-?\s*COND/i.test(nivel)) {
+      if (narrativo && !xlLooksLikeGuide(narrativo)) result.precondiciones = narrativo;
+    }
+  }
+
+  // ── 2) Línea base / meta / plazo desde "6. Indicadores IOV" (mismo orden) ──
+  const bloquesIov = [];
+  let actualIov = null;
+  if (iov) {
+    for (let r = 0; r < iov.length; r++) {
+      const row = iov[r] || [];
+      const marcador = xlNorm(row[0]);
+      const base = xlNorm(row[3]);
+      const meta = xlNorm(row[4]);
+      const plazo = xlNorm(row[5]);
+      const esFilaConDatos = base || meta || plazo || xlNorm(row[1]) || xlNorm(row[2]);
+      if (!esFilaConDatos) continue;
+      if (marcador) {
+        actualIov = { base, meta, plazo, resultados: [] };
+        bloquesIov.push(actualIov);
+      } else if (actualIov) {
+        actualIov.resultados.push({ base, meta, plazo });
+      }
+    }
+  }
+
+  // ── 3) Combinar por posición en objetivos_esp con el esquema de la app ──
+  bloques.forEach((b, oi) => {
+    const iovB = bloquesIov[oi] || { base: '', meta: '', plazo: '', resultados: [] };
+    const o = {
+      id: oi + 1,
+      texto: b.texto,
+      resultados: b.resultados.map(r => r.texto),
+      iov: { ind: b.ind, base: iovB.base || '', meta: iovB.meta || '', plazo: iovB.plazo || '' },
+      iov_resultados: b.resultados.map((r, ri) => ({
+        ind: r.ind, base: (iovB.resultados[ri] || {}).base || '',
+        meta: (iovB.resultados[ri] || {}).meta || '', plazo: (iovB.resultados[ri] || {}).plazo || ''
+      })),
+      mv: b.mv, sup: b.sup,
+      res_mv: b.resultados.map(r => r.mv),
+      res_sup: b.resultados.map(r => r.sup),
+      actividades_struct: b.resultados.map(() => [])
+    };
+    result.objetivos_esp.push(o);
+  });
+
+  return result;
+}
+
+const XL_RUBRO_LABELS = {
+  'RECURSO HUMANO': 'rh', 'MATERIALES E INSUMOS': 'mi', 'CONSULTORÍAS Y ASESORÍAS': 'ca',
+  'MAQUINARIA Y EQUIPOS': 'maq', 'TIC': 'tic', 'TRANSFERENCIA DE TECNOLOGÍA': 'tt', 'SERVICIOS EXTERNOS': 'se'
+};
+
+function xlParsePresupuesto(wb, RUBROS_SENA) {
+  const porRubro = {}; RUBROS_SENA.forEach(r => porRubro[r.id] = []);
+  const aoa = xlAOA(wb, '7. Presupuesto');
+  if (!aoa) return RUBROS_SENA.map(r => ({ id: r.id, items: [] }));
+
+  let rubroActual = null;
+  for (let r = 0; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const b = xlNorm(row[1]);
+    const bUpper = b.toUpperCase();
+    if (XL_RUBRO_LABELS[bUpper]) { rubroActual = XL_RUBRO_LABELS[bUpper]; continue; }
+    if (!b || /^SUBTOTAL/i.test(b) || /^TOTAL GENERAL/i.test(b)) continue;
+    if (!rubroActual) continue;
+
+    const c = xlNorm(row[2]);
+    const d = xlNorm(row[3]);
+    const e = parseFloat(row[4]);
+    const f = parseFloat(row[5]);
+    const g = parseFloat(row[6]);
+    const i = xlNorm(row[8]);
+    // Puede que el usuario haya usado C como justificación (en vez de I) — se toma la que exista.
+    const just = i || (c && !/^\p{Emoji}/u.test(c) ? c : '');
+
+    porRubro[rubroActual].push({
+      desc: b, act: d || '', cant: isFinite(e) ? e : 1, tiempo: isFinite(f) ? f : 1,
+      unit: isFinite(g) ? g : 0, just: just
+    });
+  }
+  return RUBROS_SENA.map(r => ({ id: r.id, items: porRubro[r.id] }));
+}
+
+function xlParseRiesgos(wb) {
+  const aoa = xlAOA(wb, '8. Riesgos');
+  if (!aoa) return [{ tipo: 'Técnico', desc: '', prob: 'Media', imp: 'Alto', mit: '', cont: '' }];
+  const tipos = ['Técnico', 'Financiero', 'Administrativo', 'Externo', 'Legal'];
+  const out = [];
+  for (let r = 0; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const tipo = xlNorm(row[1]);
+    if (!tipos.includes(tipo)) continue;
+    const desc = xlNorm(row[2]);
+    if (!desc || xlLooksLikeGuide(desc)) continue;
+    const prob = xlNorm(row[3]); const imp = xlNorm(row[4]);
+    out.push({
+      tipo,
+      desc,
+      prob: ['Alta', 'Media', 'Baja'].includes(prob) ? prob : 'Media',
+      imp: ['Alto', 'Medio', 'Bajo'].includes(imp) ? imp : 'Alto',
+      mit: xlNorm(row[5]), cont: xlNorm(row[6])
+    });
+  }
+  return out.length ? out : [{ tipo: 'Técnico', desc: '', prob: 'Media', imp: 'Alto', mit: '', cont: '' }];
+}
+
+function xlParseSostenibilidad(wb) {
+  const out = { sos_amb: '', sos_soc: '', sos_cap: '', imp_form: '', imp_soc: '', imp_amb: '', imp_tec: '' };
+  const aoa = xlAOA(wb, '9. Sostenibilidad');
+  if (!aoa) return out;
+  // Los primeros 3 (Ambiental/Social/Institucional) son de Sostenibilidad; los últimos 4 son Impactos.
+  const orden = [
+    ['Ambiental', 'sos_amb'], ['Social', 'sos_soc'], ['Institucional / Financiera', 'sos_cap']
+  ];
+  const ordenImpactos = [
+    ['En formación', 'imp_form'], ['Social', 'imp_soc'], ['Ambiental', 'imp_amb'], ['Tecnológico', 'imp_tec']
+  ];
+  let enImpactos = false;
+  let idxSos = 0, idxImp = 0;
+  for (let r = 0; r < aoa.length; r++) {
+    const row = aoa[r] || [];
+    const b = xlNorm(row[1]);
+    if (/^IMPACTOS ESPERADOS$/i.test(b)) { enImpactos = true; continue; }
+    if (!b || /^SOSTENIBILIDAD$/i.test(b)) continue;
+    const val = xlNorm(row[2]);
+    const clean = (val && !xlLooksLikeGuide(val)) ? val : '';
+    if (!enImpactos && idxSos < orden.length) { out[orden[idxSos][1]] = clean; idxSos++; }
+    else if (enImpactos && idxImp < ordenImpactos.length) { out[ordenImpactos[idxImp][1]] = clean; idxImp++; }
+  }
+  return out;
+}
+
+function xlBuildS(wb, LINEAS, MUNICIPIOS, RUBROS_SENA) {
+  const ident = xlParseIdentificacion(wb, LINEAS, MUNICIPIOS);
+  const arboles = xlParseArboles(wb);
+  const obj_general = xlParseObjGeneral(wb);
+  const matriz = xlParseMatrizYObjetivos(wb);
+  const presupuesto_v2 = xlParsePresupuesto(wb, RUBROS_SENA);
+  const riesgos = xlParseRiesgos(wb);
+  const sos = xlParseSostenibilidad(wb);
+
+  const objetivos_esp = matriz.objetivos_esp.length ? matriz.objetivos_esp : [
+    { id: 1, texto: '', resultados: ['', '', ''], iov: { ind: '', base: '', meta: '', plazo: '' }, iov_resultados: [],
+      mv: '', sup: '', res_mv: [], res_sup: [], actividades_struct: [] }
+  ];
+
+  return Object.assign({}, ident, arboles, {
+    obj_general,
+    obj_especifico: '',
+    resultados: ['', '', '', ''],
+    objetivos_esp,
+    actividades_struct: [],
+    iov_proposito: { ind: '', base: '', meta: '', plazo: '' },
+    iov_resultados: [],
+    fin_ind: matriz.fin_ind, fin_mv: matriz.fin_mv, fin_sup: matriz.fin_sup,
+    prop_mv: '', prop_sup: '', res_mv: [], res_sup: [],
+    precondiciones: matriz.precondiciones,
+    presupuesto_v2, riesgos,
+    sos_amb: sos.sos_amb, sos_soc: sos.sos_soc, sos_cap: sos.sos_cap,
+    imp_form: sos.imp_form, imp_soc: sos.imp_soc, imp_amb: sos.imp_amb, imp_tec: sos.imp_tec,
+    _migrated_v2: true
+  });
+}
+
+
+function importExcel() {
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.xlsx,.xls';
+  inp.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const fr = new FileReader();
+    fr.onload = ev => {
+      try {
+        const wb = XLSX.read(ev.target.result, { type: 'array' });
+        const nuevo = xlBuildS(wb, LINEAS, MUNICIPIOS, RUBROS_SENA);
+        const encontroAlgo = nuevo.titulo || nuevo.problema || nuevo.obj_central || nuevo.objetivos_esp.some(o => o.texto);
+        if (!encontroAlgo) {
+          showToast('No se encontraron datos reconocibles en este Excel — revisa que use la plantilla del Formulador MML.', 'err', true);
+          return;
+        }
+        const preview = '"' + (nuevo.titulo || '(sin título)').substring(0, 60) + '"';
+        if (!confirm('Vas a CARGAR el proyecto ' + preview + ' desde este Excel.\n\nEsto reemplaza TODO lo que tengas actualmente en la app (igual que Importar respaldo). Si quieres conservar tu avance actual, expórtalo primero.\n\n¿Continuar?')) return;
+        Object.assign(S, nuevo);
+        S.session = 1; S.completed = [];
+        if (S.f1 || S.titulo) S.completed.push(1);
+        if (S.problema) S.completed.push(2);
+        if (S.efdir.some(Boolean) || S.cadir.some(Boolean)) S.completed.push(3);
+        if (S.obj_central) S.completed.push(4);
+        if (S.objetivos_esp.some(o => o.texto)) S.completed.push(5);
+        if (S.obj_general) S.completed.push(6);
+        if (S.objetivos_esp.some(o => o.iov.ind)) S.completed.push(7);
+        if (S.objetivos_esp.some(o => o.mv)) S.completed.push(8);
+        if (S.presupuesto_v2.some(r => r.items.some(i => i.desc)) || S.riesgos.some(r => r.desc)) S.completed.push(9);
+        if (S.sos_amb || S.imp_form) S.completed.push(10);
+        S.session = S.completed.length ? Math.min(Math.max(...S.completed) + 1, 10) : 1;
+        scheduleSave(); render();
+        showToast('Proyecto cargado desde Excel ✓ Revísalo sesión por sesión antes de continuar.', 'green', true);
+      } catch (err) {
+        showToast('Error al leer el Excel: ' + err.message, 'err', true);
+      }
+    };
+    fr.readAsArrayBuffer(file);
+  };
+  inp.click();
+}
+
 function importJSON() {
   const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
   inp.onchange=e=>{
@@ -1959,6 +2352,8 @@ function render() {
     '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Exportar respaldo .json</button>' +
     '<button class="sidebar-btn" onclick="importJSON()">' +
     '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 10 12 5 17 10"/></svg>Importar respaldo .json</button>' +
+    '<button class="sidebar-btn" onclick="importExcel()" style="color:#0f766e">' +
+    '<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 13h2v5H8zM14 13h2v5h-2zM8 8h8"/></svg>Cargar desde Excel</button>' +
     '<button class="sidebar-btn" onclick="checkEmergencyBackup()" style="color:#92400e">' +
     '<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Revisar respaldo de emergencia</button>' +
     '</div>' +
