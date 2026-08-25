@@ -799,11 +799,6 @@ function patchLive() {
 }
 
 function patchValidation() {
-  const ogw = document.getElementById('og-warn');
-  if (ogw) {
-    const bad = S.obj_general && !S.obj_general.toLowerCase().startsWith('contribuir');
-    ogw.style.display = bad ? '' : 'none';
-  }
   const pf = document.querySelector('.prog-fill');
   if (pf) pf.style.width = Math.round(S.completed.length/10*100)+'%';
 }
@@ -1239,7 +1234,6 @@ function renderS6() {
     + '<div class="note info">El objetivo general empieza siempre con <strong>"Contribuir a…"</strong> porque el proyecto solo no puede resolver todo — hace su parte para un cambio más grande en el territorio.</div>'
     + field('Objetivo general',
       `<textarea id="inp-obj-gen" oninput="S.obj_general=this.value;scheduleSave();patchLive()" placeholder="Contribuir a…">${esc(S.obj_general)}</textarea>`
-      + `<div id="og-warn" class="val-err" style="display:${S.obj_general && !S.obj_general.toLowerCase().startsWith('contribuir')?'':'none'}">⚠ Debe iniciar con "Contribuir a…"</div>`
     )
   ) + card(`Actividades por resultado esperado ${tipBtn('actividad')}`,
     `<div class="note info">Cada actividad debe comenzar con un sustantivo que describe la acción: <em>${SUSTANTIVOS_ACT.slice(0,6).join(', ')}…</em> Una actividad va amarrada a un solo resultado — no puede pertenecer a dos al mismo tiempo.</div>`
